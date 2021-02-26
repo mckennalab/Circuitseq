@@ -1,3 +1,4 @@
+#takes the ugly fasta and makes it easier to work with
 import sys
 
 with open(sys.argv[1]+'_ref.fasta', 'r') as f:
