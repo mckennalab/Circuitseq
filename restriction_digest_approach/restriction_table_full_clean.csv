@@ -1,0 +1,284 @@
+AatII,GACGT/C,CutSmart Buffer,<10,50*,50,100,80C,37C,B,[Image: blocked],_ DNA,
+AbaSI,CNNNNNNNNNNN/NNNNNNNNNG,CutSmart Buffer,25,50,50,100,65C,25C,C,[Image: not sensitive],T4 wild-type phage DNA (fully ghmC-modified),e
+AccI,GT/MKAC,CutSmart Buffer,50,50,10,100,80C,37C,A,[Image: Blocked by Overlapping],_ DNA,
+Acc65I,G/GTACC,NEBuffer 3.1,10,75*,100,25,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],pBC4 DNA,
+AciI,CCGC(-3/-1),CutSmart Buffer,<10,25,100,100,65C,37C,A,[Image: blocked],_ DNA,
+AclI,AA/CGTT,CutSmart Buffer,<10,<10,<10,100,No,37C,B,[Image: blocked],_ DNA,
+AcuI,CTGAAG(16/14),CutSmart Buffer,50,100,50,100,65C,37C,B,[Image: not sensitive],_ DNA,"1, b, d"
+AfeI,AGC/GCT,CutSmart Buffer,25,100,25,100,65C,37C,B,[Image: blocked],pXba DNA,
+AflII,C/TTAAG,CutSmart Buffer,50,100,10,100,65C,37C,A,[Image: not sensitive],_X174 RF I DNA,
+AflIII,A/CRYGT,NEBuffer 3.1,10,50,100,50,80C,37C,B,[Image: not sensitive],_ DNA,
+AgeIʤ,A/CCGGT,NEBuffer 1.1,100,75,25,75,65C,37C,C,[Image: blocked],_ DNA,
+AgeI-HF,A/CCGGT,CutSmart Buffer,100,50,10,100,65C,37C,A,[Image: blocked],_ DNA,
+AhdI,GACNNN/NNGTC,CutSmart Buffer,25,25,10,100,65C,37C,A,[Image: Impaired by Some Combinations of Overlapping],_ DNA,a
+AleI-v2,CACNN/NNGTG,CutSmart Buffer,<10,<10,<10,100,65C,37C,B,[Image: Impaired by Overlapping],,
+AluI,AG/CT,CutSmart Buffer,25,100,50,100,80C,37C,B,[Image: not sensitive],_ DNA,b
+AlwI,GGATC(4/5),CutSmart Buffer,50,50,10,100,No,37C,A,[Image: not sensitive],_ DNA (dam-),"1, b, d"
+AlwNI,CAGNNN/CTG,CutSmart Buffer,10,100,50,100,80C,37C,A,[Image: not sensitive],_ DNA,
+ApaI,GGGCC/C,CutSmart Buffer,25,25,<10,100,65C,25C,A,[Image: Blocked by Overlapping],pXba DNA,
+ApaLI,G/TGCAC,CutSmart Buffer,100,100,10,100,No,37C,A,[Image: Blocked by Overlapping],_ DNA (HindIII digest),
+ApeKI,G/CWGC,NEBuffer 3.1,25,50,100,10,No,75C,B,[Image: Blocked by Overlapping],_ DNA,
+ApoIʤ,R/AATTY,NEBuffer 3.1,10,75,100,75,80C,50C,A,[Image: not sensitive],_ DNA,
+ApoI-HF,R/AATTY,CutSmart Buffer,10,100,10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+AscI,GG/CGCGCC,CutSmart Buffer,<10,10,10,100,80C,37C,A,[Image: blocked],_ DNA,
+AseI,AT/TAAT,NEBuffer 3.1,<10,50*,100,10,65C,37C,B,[Image: not sensitive],_ DNA,3
+AsiSI,GCGAT/CGC,CutSmart Buffer,100,100,25,100,80C,37C,B,[Image: blocked],XhoI digested pXba,"2, b"
+AvaI,C/YCGRG,CutSmart Buffer,<10,100,25,100,80C,37C,A,[Image: blocked],_ DNA,
+AvaII,G/GWCC,CutSmart Buffer,50,75,10,100,80C,37C,A,[Image: Blocked by Overlapping],_ DNA,
+AvrII,C/CTAGG,CutSmart Buffer,100,50,50,100,No,37C,B,[Image: not sensitive],_ DNA (HindIII digest),
+BaeGI,GKGCM/C,NEBuffer 3.1,75,75,100,25,80C,37C,A,[Image: not sensitive],_ DNA,
+BaeI,(10/15)ACNNNNGTAYC(12/7),CutSmart Buffer+ SAM,50,100,50,100,65C,25C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,e
+BamHIʤ,G/GATCC,NEBuffer 3.1,75*,100*,100,100*,No,37C,A,[Image: not sensitive],_ DNA,3
+BamHI-HF,G/GATCC,CutSmart Buffer,100,50,10,100,No,37C,A,[Image: not sensitive],_ DNA,
+BanI,G/GYRCC,CutSmart Buffer,10,25,<10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,1
+BanII,GRGCY/C,CutSmart Buffer,100,100,50,100,80C,37C,A,[Image: not sensitive],_ DNA,2
+BbsIʤ,GAAGAC(2/6),NEBuffer 2.1,100,100,25,75,65C,37C,B,[Image: not sensitive],_ DNA,
+BbsI-HF,GAAGAC(2/6),CutSmart Buffer,10,10,10,100,65C,37C,B,[Image: not sensitive],_ DNA,
+BbvCI,CCTCAGC(-5/-2),CutSmart Buffer,10,100,50,100,No,37C,B,[Image: Impaired by Overlapping],_ DNA,"1, a"
+BbvI,GCAGC(8/12),CutSmart Buffer,100,100,25,100,65C,37C,B,[Image: not sensitive],pBR322 DNA,3
+BccI,CCATC(4/5),CutSmart Buffer,100,50,10,100,65C,37C,A,[Image: not sensitive],pXba DNA,"3, b"
+BceAI,ACGGC(12/14),NEBuffer 3.1,100*,100*,100,100*,65C,37C,A,[Image: blocked],pBR322 DNA,1
+BcgI,(10/12)CGANNNNNNTGC(12/10),NEBuffer 3.1,10,75*,100,50*,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,e
+BciVI,GTATCC(6/5),CutSmart Buffer,100,25,<10,100,80C,37C,C,[Image: not sensitive],_ DNA,b
+BclIʤ,T/GATCA,NEBuffer 3.1,50,100,100,75,No,50C,A,[Image: not sensitive],_ DNA (dam-),
+BclI-HF,T/GATCA,CutSmart Buffer,100,100,10,100,65C,37C,B,[Image: not sensitive],_ DNA (dam-),
+BcoDI,GTCTC(1/5),CutSmart Buffer,50,75,75,100,No,37C,B,[Image: Impaired by Some Combinations of Overlapping],_ DNA,
+BfaI,C/TAG,CutSmart Buffer,<10,10,<10,100,80C,37C,B,[Image: not sensitive],_ DNA,"2, b"
+BfuAI,ACCTGC(4/8),NEBuffer 3.1,<10,25,100,10,65C,50C,B,[Image: Impaired by Overlapping],_ DNA,3
+BglI,GCCNNNN/NGGC,NEBuffer 3.1,10,25,100,10,65C,37C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+BglII,A/GATCT,NEBuffer 3.1,10,10,100,<10,No,37C,A,[Image: not sensitive],_ DNA,
+BlpI,GC/TNAGC,CutSmart Buffer,50,100,10,100,No,37C,A,[Image: not sensitive],_ DNA,d
+BmgBI,CACGTC(-3/-3),NEBuffer 3.1,<10,10,100,10,65C,37C,B,[Image: blocked],_ DNA,"3, b, d"
+BmrI,ACTGGG(5/4),NEBuffer 2.1,75,100,75,100*,65C,37C,B,[Image: not sensitive],_ DNA (HindIII digest),b
+BmtIʤ,GCTAG/C,NEBuffer 3.1,100,100,100,100+,65C,37C,B,[Image: not sensitive],pXba DNA,2
+BmtI-HF,GCTAG/C,CutSmart Buffer,50,100,10,100,65C,37C,B,[Image: not sensitive],pXba DNA,
+BpmI,CTGGAG(16/14),NEBuffer 3.1,75,100,100,100*,65C,37C,B,[Image: not sensitive],_ DNA,2
+BpuEI,CTTGAG(16/14),CutSmart Buffer,50*,100,50*,100,65C,37C,B,[Image: not sensitive],_ DNA,d
+Bpu10I,CCTNAGC(-5/-2),NEBuffer 3.1,10,25,100,25,80C,37C,B,[Image: not sensitive],_ DNA,"3, b, d"
+BsaAI,YAC/GTR,CutSmart Buffer,100,100,100,100,No,37C,C,[Image: blocked],_ DNA,
+BsaBI,GATNN/NNATC,CutSmart Buffer,50,100,75,100,80C,60C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA (dam-),2
+BsaHI,GR/CGYC,CutSmart Buffer,50,100,100,100,80C,37C,C,[Image: blocked],_ DNA,
+BsaIʤ,GGTCTC(1/5),CutSmart Buffer,75*,75,100,100,65C,37C,B,[Image: Blocked by Some Combinations of Overlapping],pXba DNA,3
+BsaI-HFv2,GGTCTC(1/5),CutSmart Buffer,100,100,100,100,80C,37C,B,[Image: Blocked by Some Combinations of Overlapping],pXba DNA,
+BsaJI,C/CNNGG,CutSmart Buffer,50,100,100,100,80C,60C,A,[Image: not sensitive],_ DNA,
+BsaWI,W/CCGGW,CutSmart Buffer,10,100,50,100,80C,60C,A,[Image: not sensitive],_ DNA,
+BsaXI,(9/12)ACNNNNNCTCC(10/7),CutSmart Buffer,50*,100*,10,100,No,37C,C,[Image: not sensitive],_ DNA,e
+BseRI,GAGGAG(10/8),CutSmart Buffer,100,100,75,100,80C,37C,A,[Image: not sensitive],_ DNA,d
+BseYI,CCCAGC(-5/-1),NEBuffer 3.1,10,50,100,50,80C,37C,B,[Image: Blocked by Overlapping],_ DNA,d
+BsgI,GTGCAG(16/14),CutSmart Buffer,25,50,25,100,65C,37C,B,[Image: not sensitive],_ DNA,d
+BsiEI,CGRY/CG,CutSmart Buffer,25,50,<10,100,No,60C,A,[Image: blocked],_ DNA,
+BsiHKAI,GWGCW/C,CutSmart Buffer,25,100,100,100,No,65C,A,[Image: not sensitive],_ DNA,
+BsiWIʤ,C/GTACG,NEBuffer 3.1,25,50*,100,25,65C,55C,B,[Image: blocked],_X174 DNA,
+BsiWI-HF,C/GTACG,CutSmart Buffer,50,100,10,100,No,37C,B,[Image: blocked],_X174 DNA,
+BslI,CCNNNNN/NNGG,CutSmart Buffer,50,75,100,100,No,55C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,b
+BsmAI,GTCTC(1/5),CutSmart Buffer,50,100,100,100,No,55C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+BsmBI-v2,CGTCTC,NEBuffer 3.1,<10,50,100,25,80C,55C,B,[Image: blocked],,
+BsmFI,GGGAC(10/14),CutSmart Buffer,25,50,50,100,80C,65C,A,[Image: Blocked by Overlapping],pBR322 DNA,1
+BsmI,GAATGC(1/-1),CutSmart Buffer,25,100,<10,100,80C,65C,A,[Image: not sensitive],_ DNA,
+BsoBI,C/YCGRG,CutSmart Buffer,25,100,100,100,80C,37C,A,[Image: not sensitive],_ DNA,
+BspCNI,CTCAG(9/7),CutSmart Buffer,100,75,10,100,80C,37C,A,[Image: not sensitive],_ DNA,b
+BspDI,AT/CGAT,CutSmart Buffer,25,75,50,100,80C,37C,A,[Image: blocked],_ DNA,
+BspEI,T/CCGGA,NEBuffer 3.1,<10,10,100,<10,80C,37C,B,[Image: Impaired],_ DNA (dam-),
+BspHI,T/CATGA,CutSmart Buffer,10,50,25,100,80C,37C,A,[Image: not sensitive],_ DNA,
+Bsp1286I,GDGCH/C,CutSmart Buffer,25,25,25,100,65C,37C,A,[Image: not sensitive],_ DNA,3
+BspMI,ACCTGC(4/8),NEBuffer 3.1,10,50*,100,10,65C,37C,B,[Image: not sensitive],_ DNA,
+BspQI,GCTCTTC(1/4),NEBuffer 3.1,100*,100*,100,100*,80C,50C,B,[Image: not sensitive],_ DNA,3
+BsrBI,CCGCTC(-3/-3),CutSmart Buffer,50,100,100,100,80C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,d
+BsrDI,GCAATG(2/0),NEBuffer 2.1,10,100,75,25,80C,65C,A,[Image: not sensitive],_ DNA,"3, d"
+BsrFI-v2,R/CCGGY,CutSmart Buffer,25,25,0,100,No,37C,C,[Image: blocked],pBR322 DNA,
+BsrGIʤ,T/GTACA,NEBuffer 2.1,25,100,100,25,80C,37C,A,[Image: not sensitive],_ DNA,
+BsrGI-HF,T/GTACA,CutSmart Buffer,10,100,100,100,80C,37C,A,[Image: not sensitive],_ DNA,
+BsrI,ACTGG(1/-1),NEBuffer 3.1,<10,50,100,10,80C,65C,B,[Image: not sensitive],_X174 DNA,b
+BssHII,G/CGCGC,CutSmart Buffer,100,100,100,100,65C,50C,B,[Image: blocked],_ DNA,
+BssSI-v2,CACGAG(-5/-1),CutSmart Buffer,10,25,<10,100,No,37C,B,[Image: not sensitive],_ DNA,
+BstAPI,GCANNNN/NTGC,CutSmart Buffer,50,100,25,100,80C,60C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,b
+BstBI,TT/CGAA,CutSmart Buffer,75,100,10,100,No,65C,A,[Image: blocked],_ DNA,
+BstEIIʤ,G/GTNACC,NEBuffer 3.1,10,75*,100,75*,No,60C,A,[Image: not sensitive],_ DNA,3
+BstEII-HF,G/GTNACC,CutSmart Buffer,<10,10,<10,100,No,37C,A,[Image: not sensitive],_ DNA,
+BstNI,CC/WGG,NEBuffer 3.1,10,100,100,75,No,60C,A,[Image: not sensitive],_ DNA,a
+BstUI,CG/CG,CutSmart Buffer,50,100,25,100,No,60C,A,[Image: blocked],_ DNA,b
+BstXI,CCANNNNN/NTGG,NEBuffer 3.1,<10,50,100,25,80C,37C,B,[Image: not sensitive],_ DNA,3
+BstYI,R/GATCY,NEBuffer 2.1,25,100,75,100,No,60C,A,[Image: not sensitive],_ DNA,
+BstZ17I-HF,GTATAC,CutSmart Buffer,100,100,10,100,No,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+Bsu36I,CC/TNAGG,CutSmart Buffer,25,100,100,100,80C,37C,C,[Image: not sensitive],_ DNA (HindIII digest),b
+BtgI,C/CRYGG,CutSmart Buffer,50,100,100,100,80C,37C,B,[Image: not sensitive],pBR322 DNA,
+BtgZI,GCGATG(10/14),CutSmart Buffer,10,25,<10,100,80C,60C,A,[Image: Impaired],_ DNA,"3, b, d"
+BtsCI,GGATG(2/0),CutSmart Buffer,10,100,25,100,80C,50C,B,[Image: not sensitive],_ DNA,
+BtsIMutI,CAGTG(2/0),CutSmart Buffer,100,50,10,100,80C,55C,A,[Image: not sensitive],pUC19 DNA,b
+BtsI-v2,GCAGTG(2/0),CutSmart Buffer,100,100,25,100,No,55C,A,[Image: not sensitive],_ DNA,
+Cac8I,GCN/NGC,CutSmart Buffer,50,75,100,100,65C,37C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,b
+ClaI,AT/CGAT,CutSmart Buffer,10,50,50,100,65C,37C,A,[Image: blocked],_ DNA (dam-),
+CspCI,(11/13)CAANNNNNGTGG(12/10),CutSmart Buffer,10,100,10,100,65C,37C,A,[Image: not sensitive],_ DNA,e
+CviAII,C/ATG,CutSmart Buffer,50,50,10,100,65C,25C,C,[Image: not sensitive],_ DNA,
+CviKI-1,RG/CY,CutSmart Buffer,25,100,100,100,No,37C,A,[Image: not sensitive],pBR322 DNA,"1, b"
+CviQI,G/TAC,NEBuffer 3.1,75,100*,100,75*,No,25C,C,[Image: not sensitive],_ DNA,b
+DdeI,C/TNAG,CutSmart Buffer,75,100,100,100,65C,37C,B,[Image: not sensitive],_ DNA,
+DpnI,GA/TC,CutSmart Buffer,100,100,75,100,80C,37C,B,[Image: Blocked by Overlapping],pBR322 DNA (dam methylated),b
+DpnII,/GATC,NEBuffer DpnII,25,25,100*,25,65C,37C,B,[Image: not sensitive],_ DNA (dam-),
+DraI,TTT/AAA,CutSmart Buffer,75,75,50,100,65C,37C,A,[Image: not sensitive],_ DNA,
+DraIII-HF,CACNNN/GTG,CutSmart Buffer,<10,50,10,100,No,37C,B,[Image: Impaired by Overlapping],_ DNA,b
+DrdI,GACNNNN/NNGTC,CutSmart Buffer,25,50,10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],pUC19 DNA,3
+EaeI,Y/GGCCR,CutSmart Buffer,10,50,<10,100,65C,37C,A,[Image: Blocked by Overlapping],_ DNA,b
+EagIʤ,C/GGCCG,NEBuffer 3.1,10,25,100,10,65C,37C,B,[Image: blocked],pXba DNA,
+EagI-HF,C/GGCCG,CutSmart Buffer,25,100,100,100,65C,37C,B,[Image: blocked],pXba DNA,
+EarI,CTCTTC(1/4),CutSmart Buffer,50,10,<10,100,65C,37C,B,[Image: Impaired by Overlapping],_ DNA,"b, d"
+EciI,GGCGGA(11/9),CutSmart Buffer,100,50,50,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,2
+Eco53kI,GAG/CTC,CutSmart Buffer,100,100,<10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],pXba DNA,"3, b"
+EcoNI,CCTNN/NNNAGG,CutSmart Buffer,50,100,75,100,65C,37C,A,[Image: not sensitive],_ DNA,b
+EcoO109I,RG/GNCCY,CutSmart Buffer,50,100,50,100,65C,37C,A,[Image: not sensitive],_ DNA (HindIII digest),3
+EcoP15I,CAGCAG(25/27),NEBuffer 3.1+ ATP,75,100,100,100,65C,37C,A,[Image: not sensitive],pUC19 DNA,e
+EcoRIʤ,G/AATTC,NEBuffer EcoRI,25,100*,50,50*,65C,37C,C,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+EcoRI-HF,G/AATTC,CutSmart Buffer,10,100,<10,100,65C,37C,C,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+EcoRVʤ,GAT/ATC,NEBuffer 3.1,10,50,100,10,80C,37C,A,[Image: Impaired by Some Combinations of Overlapping],_ DNA,
+EcoRV-HF,GAT/ATC,CutSmart Buffer,25,100,100,100,65C,37C,B,[Image: Impaired by Some Combinations of Overlapping],_ DNA,
+Esp3I,CGTCTC(1/5),CutSmart Buffer,100,100,<10,100,65C,37C,B,[Image: blocked],_ DNA,
+FatI,/CATG,NEBuffer 2.1,10,100,50,50,80C,55C,A,[Image: not sensitive],pUC19 DNA,
+FauI,CCCGC(4/6),CutSmart Buffer,100,50,10,100,65C,55C,A,[Image: blocked],_ DNA,"3, b, d"
+Fnu4HI,GC/NGC,CutSmart Buffer,<10,<10,<10,100,No,37C,A,[Image: Blocked by Overlapping],_ DNA,a
+FokI,GGATG(9/13),CutSmart Buffer,100,100,75,100,65C,37C,A,[Image: Impaired by Overlapping],_ DNA,"3, b, d"
+FseI,GGCCGG/CC,CutSmart Buffer,100,75,<10,100,65C,37C,B,[Image: blocked],pBC4 DNA,
+FspEI,CC(12/16),CutSmart Buffer,<10,<10,<10,100,80C,37C,B,[Image: not sensitive],pBR322 (dcm+) DNA,"1, e"
+FspI,TGC/GCA,CutSmart Buffer,10,100,10,100,No,37C,C,[Image: blocked],_ DNA,b
+HaeII,RGCGC/Y,CutSmart Buffer,25,100,10,100,80C,37C,A,[Image: blocked],_ DNA,
+HaeIII,GG/CC,CutSmart Buffer,50,100,25,100,80C,37C,A,[Image: not sensitive],_ DNA,
+HgaI,GACGC(5/10),NEBuffer 1.1,100,100,25,100*,65C,37C,A,[Image: blocked],_X174 DNA,1
+HhaI,GCG/C,CutSmart Buffer,25,100,100,100,65C,37C,A,[Image: blocked],_ DNA,
+HincII,GTY/RAC,NEBuffer 3.1,25,100,100,100,65C,37C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+HindIIIʤ,A/AGCTT,NEBuffer 2.1,25,100,50,50,80C,37C,B,[Image: not sensitive],_ DNA,2
+HindIII-HF,A/AGCTT,CutSmart Buffer,10,100,10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+HinfI,G/ANTC,CutSmart Buffer,50,100,100,100,80C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+HinP1I,G/CGC,CutSmart Buffer,100,100,100,100,65C,37C,A,[Image: blocked],_ DNA,
+HpaI,GTT/AAC,CutSmart Buffer,<10,75*,25,100,No,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,1
+HpaII,C/CGG,CutSmart Buffer,100,50,<10,100,80C,37C,A,[Image: blocked],_ DNA,
+HphI,GGTGA(8/7),CutSmart Buffer,50,50,<10,100,65C,37C,B,[Image: not sensitive],_ DNA,"b, d"
+HpyAV,CCTTC(6/5),CutSmart Buffer,100,100,25,100,65C,37C,[Image: Impaired by Overlapping],_ DNA,"3, b, d",
+HpyCH4III,ACN/GT,CutSmart Buffer,100,25,<10,100,65C,37C,A,[Image: not sensitive],_ DNA,b
+HpyCH4IV,A/CGT,CutSmart Buffer,100,50,25,100,65C,37C,A,[Image: blocked],pUC19 DNA,
+HpyCH4V,TG/CA,CutSmart Buffer,50,50,25,100,65C,37C,A,[Image: not sensitive],_ DNA,
+Hpy99I,CGWCG/,CutSmart Buffer,50,10,<10,100,65C,37C,A,[Image: blocked],_ DNA,
+Hpy188I,TCN/GA,CutSmart Buffer,25,100,50,100,65C,37C,A,[Image: not sensitive],pBR322 DNA,"1, b"
+Hpy166II,GTN/NAC,CutSmart Buffer,100,100,50,100,65C,37C,C,[Image: Blocked by Overlapping],pBR322 DNA,
+Hpy188III,TC/NNGA,CutSmart Buffer,100,100,10,100,65C,37C,B,[Image: Blocked by Overlapping],pUC19 DNA,"3, b"
+I-CeuI,TAACTATAACGGTCCTAAGGTAGCGAA(-9/-13),CutSmart Buffer,10,10,10,100,65C,37C,B,pBHS ScaI-linearized Control Plasmid,,
+I-SceI,TAGGGATAACAGGGTAAT(-9/-13),CutSmart Buffer,10,50,25,100,65C,37C,B,pGPS2 NotI-linearized Control Plasmid,,
+KasI,G/GCGCC,CutSmart Buffer,50,100,50,100,65C,37C,B,[Image: blocked],pBR322 DNA,3
+KpnIʤ,GGTAC/C,NEBuffer 1.1,100,75,<10,50*,No,37C,A,[Image: not sensitive],pXba DNA,1
+KpnI-HF,GGTAC/C,CutSmart Buffer,100,25,<10,100,No,37C,A,[Image: not sensitive],pXba DNA,
+LpnPI,CCDG(10/14),CutSmart Buffer,<10,<10,<10,100,65C,37C,B,[Image: not sensitive],pBR322 (dcm+) DNA,"1, e"
+MboI,/GATC,CutSmart Buffer,75,100,100,100,65C,37C,A,[Image: Impaired by Overlapping],_ DNA (dam-),
+MboII,GAAGA(8/7),CutSmart Buffer,100*,100,50,100,65C,37C,C,[Image: not sensitive],_ DNA (dam-),b
+MfeIʤ,C/AATTG,CutSmart Buffer,75,50,10,100,No,37C,A,[Image: not sensitive],_ DNA,2
+MfeI-HF,C/AATTG,CutSmart Buffer,75,25,<10,100,No,37C,A,[Image: not sensitive],_ DNA,
+MluCI,/AATT,CutSmart Buffer,100,10,10,100,No,37C,A,[Image: not sensitive],_ DNA,
+MluIʤ,A/CGCGT,NEBuffer 3.1,10,50,100,25,80C,37C,A,[Image: blocked],_ DNA,
+MluI-HF,A/CGCGT,CutSmart Buffer,25,100,100,100,No,37C,A,[Image: blocked],_ DNA,
+MlyI,GAGTC(5/5),CutSmart Buffer,50,50,10,100,65C,37C,A,[Image: not sensitive],_ DNA,"b, d"
+MmeI,TCCRAC(20/18),CutSmart Buffer,50,100,50,100,65C,37C,B,[Image: Blocked by Overlapping],_X174 RF I DNA,"b, c"
+MnlI,CCTC(7/6),CutSmart Buffer,75,100,50,100,65C,37C,B,[Image: not sensitive],_ DNA,b
+MscI,TGG/CCA,CutSmart Buffer,25,100,100,100,80C,37C,C,[Image: not sensitive],_ DNA,
+MseI,T/TAA,CutSmart Buffer,75,100,75,100,65C,37C,A,[Image: not sensitive],_ DNA,
+MslI,CAYNN/NNRTG,CutSmart Buffer,50,50,<10,100,80C,37C,A,[Image: not sensitive],_ DNA,
+MspA1I,CMG/CKG,CutSmart Buffer,10,50,10,100,65C,37C,B,[Image: Blocked by Overlapping],_ DNA,
+MspI,C/CGG,CutSmart Buffer,75,100,50,100,No,37C,A,[Image: not sensitive],_ DNA,
+MspJI,CNNR(9/13),CutSmart Buffer,<10,<10,<10,100,65C,37C,B,[Image: not sensitive],pBR322 (dcm+) DNA,"1, e"
+MwoI,GCNNNNN/NNGC,CutSmart Buffer,<10,100,100,100,No,60C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+NaeI,GCC/GGC,CutSmart Buffer,25,25,<10,100,No,37C,A,[Image: blocked],pXba DNA,b
+NarI,GG/CGCC,CutSmart Buffer,100,100,10,100,65C,37C,A,[Image: blocked],pXba DNA,
+Nb.BbvCI,CCTCAGC,CutSmart Buffer,25,100,100,100,80C,37C,A,[Image: not sensitive],supercoiled plasmid DNA,e
+Nb.BsmI,GAATGC,NEBuffer 3.1,<10,50,100,10,80C,65C,A,[Image: not sensitive],supercoiled plasmid pBR322 DNA,e
+Nb.BsrDI,GCAATG,CutSmart Buffer,25,100,100,100,80C,65C,A,[Image: not sensitive],supercoiled pUC19 DNA,e
+Nb.BssSI,CACGAG,NEBuffer 3.1,10,100,100,25,No,37C,B,[Image: not sensitive],supercoiled pUC19 DNA,e
+Nb.BtsI,GCAGTG,CutSmart Buffer,75,100,75,100,80C,37C,A,[Image: not sensitive],supercoiled pUC101 DNA (dam-/dcm-),e
+NciI,CC/SGG,CutSmart Buffer,100,25,10,100,No,37C,A,[Image: Impaired by Overlapping],_ DNA,b
+NcoIʤ,C/CATGG,NEBuffer 3.1,100,100,100,100+,80C,37C,A,[Image: not sensitive],_ DNA,
+NcoI-HF,C/CATGG,CutSmart Buffer,50,100,10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+NdeI,CA/TATG,CutSmart Buffer,75,100,100,100,65C,37C,A,[Image: not sensitive],_ DNA,
+NgoMIV,G/CCGGC,CutSmart Buffer,100,50,10,100,No,37C,A,[Image: blocked],pXba DNA,1
+NheIʤ,G/CTAGC,NEBuffer 2.1,100,100,10,100+,65C,37C,C,[Image: Blocked by Some Combinations of Overlapping],_ DNA (HindIII digest),
+NheI-HF,G/CTAGC,CutSmart Buffer,100,25,10,100,80C,37C,C,[Image: Blocked by Some Combinations of Overlapping],_ DNA (HindIII digest),
+NlaIII,CATG/,CutSmart Buffer,<10,<10,<10,100,65C,37C,B,[Image: not sensitive],_X174 RF I DNA,
+NlaIV,GGN/NCC,CutSmart Buffer,10,10,10,100,65C,37C,B,[Image: Blocked by Overlapping],pBR322 DNA,
+NmeAIII,GCCGAG(21/19),CutSmart Buffer,10,10,<10,100,65C,37C,B,[Image: not sensitive],_X174 RF I DNA,c
+NotIʤ,GC/GGCCGC,NEBuffer 3.1,<10,50,100,25,65C,37C,C,[Image: blocked],pBC4 DNA,
+NotI-HF,GC/GGCCGC,CutSmart Buffer,25,100,25,100,65C,37C,A,[Image: blocked],pBC4 DNA,
+NruIʤ,TCG/CGA,NEBuffer 3.1,<10,10,100,10,No,37C,A,[Image: blocked],_ DNA,b
+NruI-HF,TCG/CGA,CutSmart Buffer,0,25,50,100,No,37C,A,[Image: blocked],_ DNA,
+NsiIʤ,ATGCA/T,NEBuffer 3.1,10,75,100,25,65C,37C,B,[Image: not sensitive],_ DNA,
+NsiI-HF,ATGCA/T,CutSmart Buffer,<10,20,<10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+NspI,RCATG/Y,CutSmart Buffer,100,100,<10,100,65C,37C,A,[Image: not sensitive],_ DNA,
+Nt.AlwI,GGATC(4/-5),CutSmart Buffer,10,100,100,100,80C,37C,A,[Image: not sensitive],pUC101 DNA (dam-/dcm-),e
+Nt.BbvCI,CCTCAGC(-5/-7),CutSmart Buffer,50,100,10,100,80C,37C,A,[Image: Blocked by Some Combinations of Overlapping],supercoiled plasmid DNA,e
+Nt.BsmAI,GTCTC(1/-5),CutSmart Buffer,100,50,10,100,65C,37C,A,[Image: blocked],supercoiled plasmid DNA,e
+Nt.BspQI,GCTCTTC(1/-7),NEBuffer 3.1,<10,25,100,10,80C,50C,B,[Image: not sensitive],supercoiled pUC19 DNA,e
+Nt.BstNBI,GAGTC(4/-5),NEBuffer 3.1,0,10,100,10,80C,55C,A,[Image: not sensitive],T7 DNA,e
+Nt.CviPII,(0/-1)CCD,CutSmart Buffer,10,100,25,100,65C,37C,A,[Image: blocked],pUC19 DNA,e
+PacI,TTAAT/TAA,CutSmart Buffer,100,75,10,100,65C,37C,A,[Image: not sensitive],pNEB193 DNA,
+PaeR7I,C/TCGAG,CutSmart Buffer,25,100,10,100,No,37C,A,[Image: blocked],_ DNA (HindIII digest),
+PciI,A/CATGT,NEBuffer 3.1,50,75,100,50*,80C,37C,B,[Image: not sensitive],pXba DNA,
+PflFI,GACN/NNGTC,CutSmart Buffer,25,100,25,100,65C,37C,A,[Image: not sensitive],pBC4 DNA,b
+PflMI,CCANNNN/NTGG,NEBuffer 3.1,0,100,100,50,65C,37C,A,[Image: not sensitive],_ DNA,"3, b, d"
+PI-PspI,TGGCAAACAGCTATTATGGGTATTATGGGT(-13/-17),NEBuffer PI-PspI + BSA,10,10,10,10,No,65C,B,pAKR7 XmnI-linearized Control Plasmid,,
+PI-SceI,ATCTATGTCGGGTGCGGAGAAAGAGGTAAT(-15/-19),NEBuffer PI-SceI+ BSA,10,10,10,10,65C,37C,B,pBSvdeX XmnI-linearized Control Plasmid,,
+PleI,GAGTC(4/5),CutSmart Buffer,25,50,25,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,"b, d"
+PluTI,GGCGC/C,CutSmart Buffer,100,25,<10,100,65C,37C,A,[Image: blocked],pXba DNA,b
+PmeI,GTTT/AAAC,CutSmart Buffer,<10,50,10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+PmlI,CAC/GTG,CutSmart Buffer,100,50,<10,100,65C,37C,A,[Image: blocked],_ DNA (HindIII digest) DNA,
+PpuMI,RG/GWCCY,CutSmart Buffer,<10,<10,<10,100,No,37C,B,[Image: not sensitive],_ DNA (HindIII digest),
+PshAI,GACNN/NNGTC,CutSmart Buffer,25,50,10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+PsiI-v2,TTA/TAA,CutSmart Buffer,25,50,10,100,65C,37C,B,[Image: not sensitive],_ DNA,3
+PspGI,/CCWGG,CutSmart Buffer,25,100,50,100,No,75C,A,[Image: not sensitive],T7 DNA,3
+PspOMI,G/GGCCC,CutSmart Buffer,10,10,<10,100,65C,37C,B,[Image: Blocked by Overlapping],pXba DNA,
+PspXI,VC/TCGAGB,CutSmart Buffer,<10,100,25,100,No,37C,B,[Image: Impaired],_ DNA (HindIII digest),
+PstIʤ,CTGCA/G,NEBuffer 3.1,75,75,100,50*,80C,37C,C,[Image: not sensitive],_ DNA,
+PstI-HF,CTGCA/G,CutSmart Buffer,10,75,50,100,No,37C,C,[Image: not sensitive],_ DNA,
+PvuIʤ,CGAT/CG,NEBuffer 3.1,<10,25,100,<10,No,37C,B,[Image: blocked],pXba DNA,
+PvuI-HF,CGAT/CG,CutSmart Buffer,25,100,100,100,No,37C,B,[Image: blocked],pXba DNA,
+PvuIIʤ,CAG/CTG,NEBuffer 3.1,50,100,100,100*,No,37C,B,[Image: not sensitive],_ DNA,
+PvuII-HF,CAG/CTG,CutSmart Buffer,<10,<10,<10,100,No,37C,B,[Image: not sensitive],_ DNA,
+RsaI,GT/AC,CutSmart Buffer,25,50,<10,100,No,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+RsrII,CG/GWCCG,CutSmart Buffer,25,75,10,100,65C,37C,C,[Image: blocked],_ DNA,
+SacIʤ,GAGCT/C,NEBuffer 1.1,100,50,10,100+,65C,37C,A,[Image: not sensitive],_ DNA (HindIII digest),
+SacI-HF,GAGCT/C,CutSmart Buffer,10,50,<10,100,65C,37C,A,[Image: Blocked by Some Combinations of Overlapping],_ DNA (HindIII digest),
+SacII,CCGC/GG,CutSmart Buffer,10,100,10,100,65C,37C,A,[Image: blocked],pXba DNA,
+SalIʤ,G/TCGAC,NEBuffer 3.1,<10,<10,100,<10,65C,37C,A,[Image: blocked],_ DNA (HindIII digest),
+SalI-HF,G/TCGAC,CutSmart Buffer,10,100,100,100,65C,37C,A,[Image: blocked],_ DNA (HindIII digest),
+SapI,GCTCTTC(1/4),CutSmart Buffer,75,50,<10,100,65C,37C,B,[Image: not sensitive],_ DNA,
+Sau3AI,/GATC,NEBuffer 1.1,100,50,10,100+,65C,37C,A,[Image: Blocked by Overlapping],_ DNA,b
+Sau96I,G/GNCC,CutSmart Buffer,50,100,100,100,65C,37C,A,[Image: Blocked by Overlapping],_ DNA,
+SbfIʤ,CCTGCA/GG,CutSmart Buffer,50,25,<10,100,80C,37C,A,[Image: not sensitive],_ DNA,3
+SbfI-HF,CCTGCA/GG,CutSmart Buffer,50,25,<10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+ScaI-HF,AGT/ACT,CutSmart Buffer,100,100,10,100,80C,37C,B,[Image: not sensitive],_ DNA,
+ScrFI,CC/NGG,CutSmart Buffer,100,100,100,100,65C,37C,C,[Image: Blocked by Overlapping],_ DNA,"2, a"
+SexAI,A/CCWGGT,CutSmart Buffer,100,75,50,100,65C,37C,A,[Image: not sensitive],pBC4 DNA (dcm-),"3, b, d"
+SfaNI,GCATC(5/9),NEBuffer 3.1,<10,75,100,25,65C,37C,B,[Image: Impaired by Some Combinations of Overlapping],_X174 RF I DNA,"3, b"
+SfcI,C/TRYAG,CutSmart Buffer,75,50,25,100,65C,37C,B,[Image: not sensitive],_ DNA,3
+SfiI,GGCCNNNN/NGGCC,CutSmart Buffer,25,100,50,100,No,50C,C,[Image: Blocked by Some Combinations of Overlapping],pXba DNA,
+SfoI,GGC/GCC,CutSmart Buffer,50,100,100,100,No,37C,B,[Image: blocked],_ DNA (HindIII digest),
+SgrAI,CR/CCGGYG,CutSmart Buffer,100,100,10,100,65C,37C,A,[Image: blocked],_ DNA,1
+SmaI,CCC/GGG,CutSmart Buffer,<10,<10,<10,100,65C,25C,B,[Image: blocked],_ DNA (HindIII digest),b
+SmlI,C/TYRAG,CutSmart Buffer,25,75,25,100,No,55C,A,[Image: not sensitive],_ DNA,b
+SnaBI,TAC/GTA,CutSmart Buffer,50*,50,10,100,80C,37C,A,[Image: blocked],T7 DNA,1
+SpeIʤ,A/CTAGT,CutSmart Buffer,75,100,25,100,80C,37C,C,[Image: not sensitive],pXba-XbaI DNA,
+SpeI-HF,A/CTAGT,CutSmart Buffer,25,50,10,100,80C,37C,C,[Image: not sensitive],pXba-XbaI DNA,
+SphIʤ,GCATG/C,NEBuffer 2.1,100,100,50,100+,65C,37C,B,[Image: not sensitive],_ DNA,2
+SphI-HF,GCATG/C,CutSmart Buffer,50,25,10,100,65C,37C,B,[Image: not sensitive],_ DNA,
+SrfI,GCCC/GGGC,CutSmart Buffer,10,50,0,100,65C,37C,B,[Image: blocked],pNEB193-SrfI DNA,
+SspIʤ,AAT/ATT,NEBuffer SspI,50,100,50,50,65C,37C,C,[Image: not sensitive],_ DNA,
+SspI-HF,AAT/ATT,CutSmart Buffer,25,100,<10,100,65C,37C,B,[Image: not sensitive],_ DNA,
+StuI,AGG/CCT,CutSmart Buffer,50,100,50,100,No,37C,A,[Image: not sensitive],_ DNA,
+StyD4I,/CCNGG,CutSmart Buffer,10,100,100,100,65C,37C,B,[Image: Impaired by Overlapping],_ DNA,
+StyI-HF,C/CWWGG,CutSmart Buffer,25,100,25,100,65C,37C,A,[Image: not sensitive],_ DNA,
+SwaI,ATTT/AAAT,NEBuffer 3.1,10,10,100,10,65C,25C,B,[Image: not sensitive],pXba DNA,"b, d"
+TaqI-v2,T/CGA,CutSmart Buffer,50,100,50,100,No,65C,B,[Image: not sensitive],_ DNA,
+TfiI,G/AWTC,CutSmart Buffer,50,100,100,100,No,65C,C,[Image: Blocked by Some Combinations of Overlapping],_ DNA,
+TseI,G/CWGC,CutSmart Buffer,75,100,100,100,No,65C,B,[Image: Blocked by Some Combinations of Overlapping],_ DNA,3
+Tsp45I,/GTSAC,CutSmart Buffer,100,50,<10,100,No,65C,A,[Image: not sensitive],_ DNA,
+TspMI,C/CCGGG,CutSmart Buffer,50*,75*,50*,100,No,75C,B,[Image: blocked],pUCAdeno plasmid DNA,d
+TspRI,NNCASTGNN/,CutSmart Buffer,25,50,25,100,No,65C,B,[Image: not sensitive],_ DNA,
+Tth111I,GACN/NNGTC,CutSmart Buffer,25,100,25,100,No,65C,B,[Image: not sensitive],pBC4 DNA,b
+XbaI,T/CTAGA,CutSmart Buffer,<10,100,75,100,65C,37C,A,[Image: not sensitive],_ DNA (dam-/Hind III digest),
+XcmI,CCANNNNN/NNNNTGG,NEBuffer 2.1,10,100,25,100*,65C,37C,C,[Image: not sensitive],_ DNA,2
+XhoI,C/TCGAG,CutSmart Buffer,75,100,100,100,65C,37C,A,[Image: Impaired],_ DNA (HindIII digest),b
+XmaI,C/CCGGG,CutSmart Buffer,25,50,<10,100,65C,37C,A,[Image: Impaired],pXba DNA,3
+XmnI,GAANN/NNTTC,CutSmart Buffer,50,75,<10,100,65C,37C,A,[Image: not sensitive],_ DNA,b
+ZraI,GAC/GTC,CutSmart Buffer,100,25,10,100,80C,37C,B,[Image: blocked],_ DNA,
