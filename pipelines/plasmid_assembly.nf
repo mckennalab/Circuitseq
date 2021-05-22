@@ -2,7 +2,7 @@
 
 /*
 ========================================================================================
-                         mckenna_lab/plasmid_seq
+                         mckenna_lab/plasmid_assembly
 ========================================================================================
  Process plasmids sequenced on Oxford Nanopore into assembled maps of each sequence
 ----------------------------------------------------------------------------------------
@@ -12,11 +12,9 @@
 input_fastq5_path  = Channel.fromPath(params.fast5)
 input_tn5ref      = Channel.fromPath(params.tn5ref)
 input_tn5proj_base = Channel.fromPath("${params.tn5ref}.*")
-// input_tn5proj_base.subscribe { println "value: $it" }
+
 input_bc_mat     = Channel.fromPath(params.bcmat)
 results_path = "results"
-minimum_file_size = 5000
-minimum_fastq_size = 50000
 
 /*
  * Basecalling using Guppy
@@ -159,7 +157,7 @@ process CanuCorrect {
     publishDir "$results_path/canu"
     
     input:
-    tuple val(datasetID), file(to_correct) from filtered_reads //.filter{ it.get(1).size()>minimum_file_size}
+    tuple val(datasetID), file(to_correct) from filtered_reads 
     
     output:
     tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_minimap, canu_corrected_convert
@@ -203,7 +201,8 @@ process ConvertGraph {
     publishDir "$results_path/convert_graph"
     
     input:
-    val phased from read_phased.filter(){it.get(1).get(1).countLines() > 1} //[val(datasetID),path(corrected_reads)],[val(datasetID),val(miniasm_overlap)]] .filter{ tag, file -> !file.isEmpty() }
+    // structure: [val(datasetID),path(corrected_reads)],[val(datasetID),val(miniasm_overlap)]]
+    val phased from read_phased.filter(){it.get(1).get(1).countLines() >= 1} 
     
     output:
     tuple val(str_name), path("${str_name}_contigs.fasta") into fasta_graph
