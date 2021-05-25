@@ -50,6 +50,8 @@ process GuppyBaseCalling {
     ## Concatenate fastq files
     mkdir fastq
     find basecalling/pass/ -name "*.fastq.gz" -exec cat {} + > fastq/all_passing.fastq.gz
+
+    
     """
 }
 
@@ -112,17 +114,35 @@ process Demultiplex {
 }
 
 
-process Porechop {
+process LengthFilter {
     publishDir "$results_path/porechop"
     
     input:
     tuple datasetID, file(fastq) from plasmid_fastqs.filter(){ it.countFastq() > 5} .map { file -> tuple(file.baseName.replaceAll("\\.", "_"), file)}
     output:
+    tuple datasetID,"${datasetID}_length_filtered.fq.gz" into length_output
+    script:
+        
+    """
+    filter_by_length.py \
+    ${fastq} \
+    ${datasetID}_length_filtered.fq.gz
+    """
+}
+
+
+
+process Porechop {
+    publishDir "$results_path/porechop"
+    
+    input:
+    tuple val(datasetID), file(fastq) from length_output
+    output:
     tuple datasetID,"${datasetID}_porechop.fq.gz" into porechop_output
     script:
         
     """
-    /home/f002sd4/plasmid_seq/Porechop_for_plasmidseq/porechop-runner.py -i ${fastq} -t 12 -o ${datasetID}_porechop.fq.gz \
+    /home/f002sd4/plasmid_seq/Porechop_for_plasmidseq/porechop-runner.py -i ${fastq} -o ${datasetID}_porechop.fq.gz \
                                                             --format fastq.gz \
                                                             --end_threshold  50 --extra_end_trim 10 \
                                                             --discard_middle --middle_threshold 80
@@ -149,7 +169,7 @@ process FilterReads {
     script:
         
     """
-    gunzip -c ${tofilter} | NanoFilt  --quality 10 --length 2500 --summary ${summary} | gzip > ${datasetID}_filtered.fq.gz
+    gunzip -c ${tofilter} | NanoFilt --quality 10 --length 2500 --summary ${summary} | gzip > ${datasetID}_filtered.fq.gz
     """
 }
 
@@ -165,12 +185,15 @@ process CanuCorrect {
     tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_minimap, canu_corrected_convert
     
     script:
+    data_subset = datasetID.split("_")[1..2].join('_')
     """
     mkdir ${datasetID}_canu_correct
     /analysis/2021_05_06_nanopore_pipeline/canu-2.1.1/bin/canu -correct \
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
      -nanopore ${to_correct} 
+    
+    
     """
 }
 
@@ -336,17 +359,6 @@ process MedakaConsensus {
     """
 }
 
-
-// TODO: install medaka_consensus the right way
-// TODO: parameter for the model
-/* TODO: requires:
-bcftools   Not found  1.11       False
-bgzip      Not found  1.11       False
-minimap2   2.17       2.11       True
-samtools   1.10       1.11       False
-tabix      Not found  1.11       False
-*/
-/*
 process Pilon {
     errorStrategy 'finish'
     publishDir "$results_path/pilon"
@@ -371,4 +383,3 @@ process Pilon {
 
     """
 }
-*/
