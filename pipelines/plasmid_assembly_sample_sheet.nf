@@ -1,6 +1,9 @@
 #!/usr/bin/env nextflow
 
 /*
+conda create -n medaka -c conda-forge -c bioconda medaka
+conda activate medaka
+conda install -c bioconda nanofilt
 ========================================================================================
                          mckenna_lab/plasmid_seq
 ========================================================================================
@@ -26,11 +29,8 @@ minimum_fastq_size = 50000
 
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
-        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference) ) }
-        .set { sample_table }
-
-//sample_table_print.subscribe { println "\n[samples_R1_R2] ${it}\n"}
-
+        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
+        .into{sample_table; sample_table_assessment; sample_table_print}
 
 /*
  * Basecalling using Guppy
@@ -70,7 +70,7 @@ process GuppyDemultiplex {
 
     output:
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary   // the fastq output file path
-    path "saved_data/barcode*/*.fastq.gz" into fastq_gz_split_files mode flatten
+    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
 
     script:
         
@@ -88,11 +88,15 @@ process GuppyDemultiplex {
     """
 }
 
+
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print }
+//guppy_demulti_print.flatten().view()
+
 process LengthFilter {
     publishDir "$results_path/length_filter"
     
     input:
-    tuple datasetID, file(fastq) from fastq_gz_split_files.filter(){ it.countFastq() > 5} .map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
+    tuple datasetID, path(fastq) from guppy_demulti.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
 
     output:
     tuple datasetID,"${datasetID}_length_filtered.fq.gz" into length_output
@@ -148,13 +152,17 @@ process FilterReads {
     """
 }
 
+
+filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; filtered_reads_canu_print }
+//filtered_reads_canu_print.view { "name: ${it.get(1)} size ${it.get(1).countFastq()}" }
+
 // TODO: fix path to canu
 // TODO: Canu really struggles with low read counts, right now we're filtering out anything with a file size less than 100Kb
 process CanuCorrect {
     publishDir "$results_path/canu"
     
     input:
-    tuple val(datasetID), file(to_correct) from filtered_reads //.filter{ it.get(1).size()>minimum_file_size}
+    tuple val(datasetID), file(to_correct) from filtered_reads_canu
     
     output:
     tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_minimap, canu_corrected_convert
@@ -162,6 +170,7 @@ process CanuCorrect {
     script:
 
     """
+    rm -rf ${datasetID}_canu_correct
     mkdir ${datasetID}_canu_correct
     /analysis/2021_05_06_nanopore_pipeline/canu-2.1.1/bin/canu -correct \
      -p reads -d ${datasetID}_canu_correct \
@@ -325,7 +334,7 @@ process MedakaConsensus {
     val tuple_pack from read_phased_medaka.filter{ it.get(1).get(1).countFasta()>=1} 
     
     output:
-    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into racon_medaka_consensus
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into racon_medaka_consensus, racon_medaka_consensus_mars
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -344,7 +353,7 @@ process Pilon {
     set dataset_graph, file(medaka_consensus) from racon_medaka_consensus
 
     output:
-    set datasetID, file("${dataset_graph}_consensus.fasta") into pilon_consensus
+    set datasetID, file("${dataset_graph}_consensus.fasta") into pilon_consensus, pilon_consensus_assessment
     
     script:
 
@@ -360,15 +369,16 @@ process Pilon {
 }
 //pilon_consensus.view { "value: $it" }
 //sample_table.view { "sample_table: $it" }
-read_phased_pilon = pilon_consensus.phase(sample_table)
+read_phased_pilon = racon_medaka_consensus_mars.phase(sample_table)
+read_phased_pilon.into{read_phased_pilon_for_mars; read_phased_pilon_for_copy}
 
 process MarsCorrection {
     errorStrategy 'finish'
     publishDir "$results_path/mars"
    
     input:
-    val tuple_pack from read_phased_pilon
-    //set samplePosition, sample_ID, reads1, reads2  from sample_table
+    val tuple_pack from read_phased_pilon_for_mars
+    //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
 
     
     output:
@@ -378,10 +388,82 @@ process MarsCorrection {
     str_name = tuple_pack.get(1).get(1)
 
     """
-
-    cat ${tuple_pack.get(1).get(2)} ${tuple_pack.get(0).get(1)} > merged_reference.fa
+    tail -n +2 ${tuple_pack.get(0).get(1)} | tr ACGTacgt TGCAtgca | rev > rev_comp_assembly_sequence.fasta
+    echo ">reverse_comp_asesmbly" > reverse_comp_header.fasta
+    cat reverse_comp_header.fasta rev_comp_assembly_sequence.fasta > rev_comp_assembly.fasta
+    cat ${tuple_pack.get(1).get(2)} ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(3)} > merged_reference.fa
     
-    /analysis/2021_04_22_circular_alignment/MARS/mars -a DNA -i merged_reference.fa -o ${tuple_pack.get(1).get(1)}_rotated.fasta -m 1
+    /analysis/2021_04_22_circular_alignment/MARS/mars -a DNA -i merged_reference.fa -o ${tuple_pack.get(1).get(1)}_rotated.fasta -m 0
 
     """
 }
+
+
+process SampleCopy {
+    errorStrategy 'finish'
+    publishDir "$results_path/simple_copy"
+   
+    input:
+    val tuple_pack from read_phased_pilon_for_copy
+    //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
+
+    
+    output:
+    set str_name, path("${str_name}_identity.fasta") into sample_copy
+    
+    script:
+    str_name = tuple_pack.get(1).get(1)
+
+    """
+    cp ${tuple_pack.get(0).get(1)} ${str_name}_identity.fasta
+
+    """
+}
+
+
+process AlignAndCompare {
+    errorStrategy 'finish'
+    publishDir "$results_path/comparison_basic"
+   
+    input:
+    tuple sample, fasta from mars_rotated
+    
+    output:
+    set sample, path("${sample}_aligned.fasta") into needleall_fasta
+    
+    script:
+
+    """
+    head -n2 ${fasta} > reference.fa
+
+    tail -n +3 ${fasta} > others.fa
+
+    needleall -asequence reference.fa -bsequence others.fa -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample}_aligned.fasta
+
+    
+
+    """
+}
+
+read_phased_pilon2 = pilon_consensus_assessment.phase(sample_table_assessment)
+
+/*
+process PlasmidComparison {
+    errorStrategy 'finish'
+    publishDir "$results_path/comparison_pilon"
+   
+    input:
+    val tuple_pack from read_phased_pilon2
+    
+    output:
+    set str_name, path("${str_name}_rotated.fasta") into plasmid_comp
+    
+    script:
+    str_name = tuple_pack.get(1).get(1)
+
+    """
+
+    assess_assembly.py ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(2)} --mode genome
+
+    """
+}*/
