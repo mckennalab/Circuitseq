@@ -4,13 +4,6 @@
 conda create -n medaka -c conda-forge -c bioconda medaka
 conda activate medaka
 conda install -c bioconda nanofilt
-wget https://anaconda.org/bioconda/pycoqc/2.5.2/download/noarch/pycoqc-2.5.2-py_0.tar.bz2
-conda install pycoqc-2.5.2-py_0.tar.bz2
-conda install -c bioconda multiqc
-
-When done, containerize:
-https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in-a-singularity-container
-
 ========================================================================================
                          mckenna_lab/plasmid_seq
 ========================================================================================
@@ -52,7 +45,7 @@ process GuppyBaseCalling {
 
     output:
     path "basecalling/pass/" into basecalled_directory
-    path "basecalling/sequencing_summary.txt" into basecalling_summary, basecalling_summary_for_pyco   // the fastq output file path
+    path "basecalling/sequencing_summary.txt" into basecalling_summary   // the fastq output file path
 
     script:
         
@@ -89,32 +82,9 @@ process GuppyDemultiplex {
         --barcode_kits MY-CUSTOM-BARCODES \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
-        -x $params.gpu_slot \\
-        --min_score $params.barcode_min_score \\
         -q 1000000 \\
+        --min_score 65 \\
         --compress_fastq
-    """
-}
-
-process pycoQC {
-    publishDir "$results_path/pycoQC"
-
-    input:
-    path basecalling_summary from basecalling_summary_for_pyco
-    path barcode_summary from barcoding_split_summary
-
-
-    output:
-    path "pycoQC.html" into pycoQC_HTML
-    
-    script:
-        
-    """
-    pycoQC \\
-        --summary_file $basecalling_summary \\
-        --barcode_file $barcode_summary \\
-        --html_outfile pycoQC.html
-        
     """
 }
 
@@ -347,6 +317,15 @@ process RaconPolish3 {
 
 read_phased_medaka = filtered_reads_medaka.phase(racon_corrected3)
 
+// TODO: install medaka_consensus the right way
+// TODO: parameter for the model
+/* TODO: requires:
+bcftools   Not found  1.11       False
+bgzip      Not found  1.11       False
+minimap2   2.17       2.11       True
+samtools   1.10       1.11       False
+tabix      Not found  1.11       False
+*/
 process MedakaConsensus {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus"
@@ -360,7 +339,7 @@ process MedakaConsensus {
     script:
     str_name = tuple_pack.get(0).get(0)
     """
-    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m $params.medaka_model
 
     """
 }
