@@ -173,7 +173,7 @@ process FilterReads {
     path summary from basecalling_summary_file
     
     output:
-    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_pilon, filtered_reads_minimap2, filtered_reads_minimap3
+    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap2, filtered_reads_minimap3
 
     script:
         
@@ -365,57 +365,106 @@ process MedakaConsensus {
     """
 }
 
-process Pilon {
-    errorStrategy 'finish'
-    publishDir "$results_path/pilon"
-   
-    input:
-    set datasetID, file(filtered_reads) from filtered_reads_pilon
-    set dataset_graph, file(medaka_consensus) from racon_medaka_consensus
-
-    output:
-    set datasetID, file("${dataset_graph}_consensus.fasta") into pilon_consensus, pilon_consensus_assessment
-    
-    script:
-
-    """
-    minimap2 -ax map-ont ${medaka_consensus} ${filtered_reads} | samtools view - -Sb | samtools sort - -@8 -o mapping.sorted.bam
-    samtools index mapping.sorted.bam
-
-    java -Xmx32G -jar /analysis/2021_05_06_nanopore_pipeline/bin/pilon-1.24.jar \
-        --genome ${medaka_consensus} --fix all --changes \
-        --unpaired mapping.sorted.bam --output ${dataset_graph}_consensus
-
-    """
-}
 //pilon_consensus.view { "value: $it" }
 //sample_table.view { "sample_table: $it" }
-read_phased_pilon = racon_medaka_consensus_mars.phase(sample_table)
-read_phased_pilon.into{read_phased_pilon_for_mars; read_phased_pilon_for_copy}
+read_phased_medaka_for_nextpolish = filtered_reads_nextpolish.phase(racon_medaka_consensus)
 
-process MarsCorrection {
+
+process NextPolish {
     errorStrategy 'finish'
-    publishDir "$results_path/mars"
+    publishDir "$results_path/nextpolish"
    
     input:
-    val tuple_pack from read_phased_pilon_for_mars
+    val tuple_pack from read_phased_medaka_for_nextpolish.filter{ it.get(1).get(1).countFasta()>=1} 
+
+    output:
+    
+    set datasetID, file("${datasetID}.nextpolish.fasta") into nextpolish_consensus, nextpolish_consensus_assessment
+    set datasetID, file("${datasetID}.nextpolish.fasta.stat") into nextpolish_consensus_stat, nextpolish_consensus_assessment_stat
+    
+    script:
+    datasetID = tuple_pack.get(0).get(0)
+    """
+    cp ${params.nanopolish_run_config} ./run.cfg
+    cp ${tuple_pack.get(1).get(1)} consensus.fasta
+    echo ${tuple_pack.get(0).get(1)} > lgs.fofn
+    ${params.nanopolish} run.cfg
+    cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish.fasta
+    cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish.fasta.stat
+    """
+}
+
+
+read_phased_nextpolish_for_nextpolish2 = filtered_reads_nextpolish2.phase(nextpolish_consensus)
+
+process NextPolish2CommaThePolishing {
+    errorStrategy 'finish'
+    publishDir "$results_path/nextpolish2"
+   
+    input:
+    val tuple_pack from read_phased_nextpolish_for_nextpolish2.filter{ it.get(1).get(1).countFasta()>=1} 
+
+    output:
+    
+    set datasetID, file("${datasetID}.nextpolish2.fasta") into nextpolish_consensus2, nextpolish_consensus_assessment2
+    set datasetID, file("${datasetID}.nextpolish2.fasta.stat") into nextpolish_consensus_stat2, nextpolish_consensus_assessment_stat2
+    
+    script:
+    datasetID = tuple_pack.get(0).get(0)
+    """
+    cp ${params.nanopolish_run_config} ./run.cfg
+    cp ${tuple_pack.get(1).get(1)} consensus.fasta
+    echo ${tuple_pack.get(0).get(1)} > lgs.fofn
+    ${params.nanopolish} run.cfg
+    cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish2.fasta
+    cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish2.fasta.stat
+    """
+}
+
+//pilon_consensus.view { "value: $it" }
+//sample_table.view { "sample_table: $it" }
+read_phased_nextpolish2 = nextpolish_consensus2.phase(sample_table)
+read_phased_nextpolish2.into{nextpolish2_consensus_for_mars; nextpolish_consensus2_for_copy}
+
+process LCPCorrection {
+    errorStrategy 'finish'
+    publishDir "$results_path/lcp"
+   
+    input:
+    val tuple_pack from nextpolish2_consensus_for_mars
     //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
 
     
     output:
-    set str_name, path("${str_name}_rotated.fasta") into mars_rotated
+    set str_name, path("${str_name}_corrected.fasta") into lcp_corrected
     
     script:
-    str_name = tuple_pack.get(1).get(1)
+    str_name = tuple_pack.get(0).get(0)
 
     """
-    tail -n +2 ${tuple_pack.get(0).get(1)} | tr ACGTacgt TGCAtgca | rev > rev_comp_assembly_sequence.fasta
-    echo ">reverse_comp_asesmbly" > reverse_comp_header.fasta
-    cat reverse_comp_header.fasta rev_comp_assembly_sequence.fasta > rev_comp_assembly.fasta
-    cat ${tuple_pack.get(1).get(2)} ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(3)} > merged_reference.fa
-    
-    /analysis/2021_04_22_circular_alignment/MARS/mars -a DNA -i merged_reference.fa -o ${tuple_pack.get(1).get(1)}_rotated.fasta -m 0
+    python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
+    """
+}
 
+read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
+read_phased_lcp.into{read_phased_lcp2}
+
+process Rotated {
+    errorStrategy 'finish'
+    publishDir "$results_path/rotated"
+   
+    input:
+    val tuple_pack from read_phased_lcp2
+    
+    
+    output:
+    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into post_lcp_rotated
+    
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
     """
 }
 
@@ -425,7 +474,7 @@ process SampleCopy {
     publishDir "$results_path/simple_copy"
    
     input:
-    val tuple_pack from read_phased_pilon_for_copy
+    val tuple_pack from nextpolish_consensus2_for_copy
     //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
 
     
@@ -442,12 +491,13 @@ process SampleCopy {
 }
 
 
+
 process AlignAndCompare {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
    
     input:
-    tuple sample, fasta from mars_rotated
+    tuple sample, assembled, ref from post_lcp_rotated
     
     output:
     set sample, path("${sample}_aligned.fasta") into needleall_fasta
@@ -455,18 +505,13 @@ process AlignAndCompare {
     script:
 
     """
-    head -n2 ${fasta} > reference.fa
+    cat ${ref} ${assembled} > full.fa
 
-    tail -n +3 ${fasta} > others.fa
-
-    needleall -asequence reference.fa -bsequence others.fa -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample}_aligned.fasta
-
+    needleall -asequence ${ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample}_aligned.fasta
     
 
     """
 }
-
-read_phased_pilon2 = pilon_consensus_assessment.phase(sample_table_assessment)
 
 /*
 process PlasmidComparison {
