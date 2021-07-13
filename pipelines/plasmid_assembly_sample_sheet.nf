@@ -567,6 +567,7 @@ process PlasmidComparisonCollection {
     script:
 
     """
-    cat ${stats.collect().join(" ")} > all_rotated.stats
+    echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
+    cat header.txt ${stats.collect().join(" ")} > all_rotated.stats
     """
 }
