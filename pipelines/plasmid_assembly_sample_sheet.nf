@@ -4,6 +4,13 @@
 conda create -n medaka -c conda-forge -c bioconda medaka
 conda activate medaka
 conda install -c bioconda nanofilt
+wget https://anaconda.org/bioconda/pycoqc/2.5.2/download/noarch/pycoqc-2.5.2-py_0.tar.bz2
+conda install pycoqc-2.5.2-py_0.tar.bz2
+conda install -c bioconda multiqc
+
+When done, containerize:
+https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in-a-singularity-container
+
 ========================================================================================
                          mckenna_lab/plasmid_seq
 ========================================================================================
@@ -45,7 +52,7 @@ process GuppyBaseCalling {
 
     output:
     path "basecalling/pass/" into basecalled_directory
-    path "basecalling/sequencing_summary.txt" into basecalling_summary   // the fastq output file path
+    path "basecalling/sequencing_summary.txt" into basecalling_summary, basecalling_summary_for_pyco   // the fastq output file path
 
     script:
         
@@ -82,15 +89,37 @@ process GuppyDemultiplex {
         --barcode_kits MY-CUSTOM-BARCODES \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
+        -x $params.gpu_slot \\
+        --min_score $params.barcode_min_score \\
         -q 1000000 \\
-        --min_score 65 \\
         --compress_fastq
+    """
+}
+
+process pycoQC {
+    publishDir "$results_path/pycoQC"
+
+    input:
+    path basecalling_summary from basecalling_summary_for_pyco
+    path barcode_summary from barcoding_split_summary
+
+
+    output:
+    path "pycoQC.html" into pycoQC_HTML
+    
+    script:
+        
+    """
+    pycoQC \\
+        --summary_file $basecalling_summary \\
+        --barcode_file $barcode_summary \\
+        --html_outfile pycoQC.html
+        
     """
 }
 
 
 fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print }
-//guppy_demulti_print.flatten().view()
 
 process LengthFilter {
     publishDir "$results_path/length_filter"
@@ -117,7 +146,7 @@ process Porechop {
     input:
     tuple val(datasetID), file(fastq) from length_output
     output:
-    tuple datasetID,"${datasetID}_porechop.fq.gz" into porechop_output
+    tuple datasetID,"${datasetID}_porechop.fq.gz" into porechop_output, porechop_output_for_minimap
     script:
         
     """
@@ -165,7 +194,7 @@ process CanuCorrect {
     tuple val(datasetID), file(to_correct) from filtered_reads_canu
     
     output:
-    tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_minimap, canu_corrected_convert
+    tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_miniasm, canu_corrected_minimap, canu_corrected_convert
     
     script:
 
@@ -187,7 +216,7 @@ process Miniasm {
     publishDir "$results_path/miniasm"
     
     input:
-    tuple val(datasetID), path(corrected_reads) from canu_corrected_minimap
+    tuple val(datasetID), path(corrected_reads) from canu_corrected_miniasm
 
     output:
     tuple val(datasetID), path("${datasetID}_overlaps.gfa") into miniasm_overlaps
@@ -317,15 +346,6 @@ process RaconPolish3 {
 
 read_phased_medaka = filtered_reads_medaka.phase(racon_corrected3)
 
-// TODO: install medaka_consensus the right way
-// TODO: parameter for the model
-/* TODO: requires:
-bcftools   Not found  1.11       False
-bgzip      Not found  1.11       False
-minimap2   2.17       2.11       True
-samtools   1.10       1.11       False
-tabix      Not found  1.11       False
-*/
 process MedakaConsensus {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus"
@@ -339,7 +359,7 @@ process MedakaConsensus {
     script:
     str_name = tuple_pack.get(0).get(0)
     """
-    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m $params.medaka_model
+    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
 
     """
 }
@@ -404,7 +424,7 @@ process NextPolish2CommaThePolishing {
 //sample_table.view { "sample_table: $it" }
 read_phased_nextpolish2 = nextpolish_consensus2.phase(sample_table)
 read_phased_nextpolish2.into{nextpolish2_consensus_for_mars; nextpolish_consensus2_for_copy}
-
+/*
 process LCPCorrection {
     errorStrategy 'finish'
     publishDir "$results_path/lcp"
@@ -424,20 +444,20 @@ process LCPCorrection {
     python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
     """
 }
-
 read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
 read_phased_lcp.into{read_phased_lcp2}
+*/
 
 process Rotated {
     errorStrategy 'finish'
     publishDir "$results_path/rotated"
    
     input:
-    val tuple_pack from read_phased_lcp2
+    val tuple_pack from nextpolish2_consensus_for_mars // read_phased_lcp2
     
     
     output:
-    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into post_lcp_rotated
+    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_eval
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -448,9 +468,9 @@ process Rotated {
 }
 
 
-process SampleCopy {
+process ReferenceCopy {
     errorStrategy 'finish'
-    publishDir "$results_path/simple_copy"
+    publishDir "$results_path/reference_copy"
    
     input:
     val tuple_pack from nextpolish_consensus2_for_copy
@@ -458,25 +478,50 @@ process SampleCopy {
 
     
     output:
-    set str_name, path("${str_name}_identity.fasta") into sample_copy
+    set str_name, path("${sample_ID}_${str_name}_identity.fasta") into sample_copy
     
     script:
     str_name = tuple_pack.get(1).get(1)
+    sample_ID = tuple_pack.get(0).get(0)
 
     """
-    cp ${tuple_pack.get(0).get(1)} ${str_name}_identity.fasta
+    cp ${tuple_pack.get(0).get(1)} ${sample_ID}_${str_name}_identity.fasta
 
     """
 }
 
+reference_and_reads = porechop_output_for_minimap.phase(rotated_reference_minimap)
+reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
 
+process AlignReads {
+    publishDir "$results_path/minimap_final"
+    
+    input:
+    tuple reads,reference from reference_and_reads_align // reads and reference 
 
-process AlignAndCompare {
+    output:
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam") into minimap_reads
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam.bai") into minimap_reads_bai
+    path("${str_name}.fasta.dict") into sequence_dict
+    path("${str_name}.fasta") into sequence_fasta
+    
+    script:
+    str_name = reads.get(0)
+
+    """
+    cp ${reference.get(1)} ${str_name}.fasta
+    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
+    minimap2 -ax map-ont ${reference.get(1)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_mapped_reads.bam
+    samtools index ${str_name}_sorted_mapped_reads.bam
+    """
+}
+
+process AlignReferences {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
    
     input:
-    tuple sample, assembled, ref from post_lcp_rotated
+    tuple sample, assembled, ref from rotated_reference_align
     
     output:
     set sample, path("${sample}_aligned.fasta") into needleall_fasta
@@ -487,28 +532,41 @@ process AlignAndCompare {
     cat ${ref} ${assembled} > full.fa
 
     needleall -asequence ${ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample}_aligned.fasta
-    
-
     """
 }
 
-/*
 process PlasmidComparison {
     errorStrategy 'finish'
-    publishDir "$results_path/comparison_pilon"
+    publishDir "$results_path/plasmid_comp"
    
     input:
-    val tuple_pack from read_phased_pilon2
+    tuple sample, assembled, ref from rotated_reference_eval
     
     output:
-    set str_name, path("${str_name}_rotated.fasta") into plasmid_comp
+    path("${sample}_rotated.stats") into plasmid_comp
     
     script:
-    str_name = tuple_pack.get(1).get(1)
 
     """
+    assess_assembly.py ${assembled} ${ref} --mode replicon > ${sample}_rotated.stats
+    """
+}
 
-    assess_assembly.py ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(2)} --mode genome
+// plasmid_comp.collect.into{plasmid_stats}
+
+process PlasmidComparisonCollection {
+    errorStrategy 'finish'
+    publishDir "$results_path/plasmid_stat"
+   
+    input:
+    file stats from plasmid_comp.toList()
+    
+    output:
+    file('all_rotated.stats')
+    
+    script:
 
     """
-}*/
+    cat ${stats.collect().join(" ")} > all_rotated.stats
+    """
+}
