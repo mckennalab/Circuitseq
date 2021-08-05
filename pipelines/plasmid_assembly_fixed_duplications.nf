@@ -204,7 +204,7 @@ process CanuCorrect {
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
      stopOnLowCoverage=2 minInputCoverage=2 \
-     rawErrorRate=0.3 correctedErrorRate=0.06 minReadLength=800 minOverlapLength=800  \
+     rawErrorRate=0.3 correctedErrorRate=0.06 minReadLength=800 minOverlapLength=800 corOverlapper=ovl \
      -nanopore ${to_correct} 
     
     
