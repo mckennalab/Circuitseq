@@ -88,7 +88,7 @@ process GuppyDemultiplex {
         --data_path ${params.barcodes} \\
         --barcode_kits MY-CUSTOM-BARCODES-27mer \\
         --front_window_size 120 \\
-        --min_score_mask 30 \\
+        --min_score_mask 20 \\
         -x $params.gpu_slot \\
         --min_score $params.barcode_min_score \\
         -q 1000000 \\
@@ -153,7 +153,7 @@ process Porechop {
     /home/f002sd4/plasmid_seq/Porechop_for_plasmidseq/porechop-runner.py -i ${fastq} -o ${datasetID}_porechop.fq.gz \
                                                             --format fastq.gz \
                                                             --end_threshold  70 --extra_end_trim 50 \
-                                                            --discard_middle --middle_threshold 80
+                                                            --discard_middle --middle_threshold 82
     """
 }
 
@@ -204,7 +204,7 @@ process CanuCorrect {
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
      stopOnLowCoverage=2 minInputCoverage=2 \
-     rawErrorRate=0.3 correctedErrorRate=0.06 minReadLength=800 minOverlapLength=800  \
+     rawErrorRate=0.3 correctedErrorRate=0.06 minReadLength=800 minOverlapLength=800 corOverlapper=ovl  \
      -nanopore ${to_correct} 
     
     

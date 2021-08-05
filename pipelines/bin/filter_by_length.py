@@ -34,6 +34,6 @@ lengths = []
 output = gzip.open(sys.argv[2], 'wt')
 with gzip.open(sys.argv[1],'rt') as f:
     for name,sequence,strand,quals in itertools.zip_longest(*[f]*4):
-        if len(sequence) < (mean + (2 * std)):
+        if len(sequence) < (mean + (4 * std)):
             output.write(name + sequence + strand + quals) # they already have endlines...
 output.close()
