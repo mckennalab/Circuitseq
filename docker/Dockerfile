@@ -1,0 +1,74 @@
+# Start from the NVIDIA CUDA Docker image built on top of Ubuntu 20
+FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04
+
+
+# basic setup -- update the instance
+# ################################################
+RUN apt-get update
+RUN apt-get install -y apt-transport-https
+RUN mkdir -p /usr/share/man/man1
+
+# add basic tools to the instance
+# ################################################
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+RUN apt-get install -y wget unzip net-tools emboss gnupg2 bash make gcc g++ zlib1g-dev libboost-all-dev curl libhdf5-serial-dev libssl-dev git build-essential
+# libcurl3 libhdf5-cpp-11 libssl1.0.0
+
+# Add conda to the instance and setup an env.
+# ################################################
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh \
+    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+
+ENV PATH="/opt/conda/bin/:${PATH}"
+
+RUN conda create -n medaka -c conda-forge -c bioconda medaka
+
+
+# from https://pythonspeed.com/articles/activate-conda-dockerfile/#working
+SHELL ["conda", "run", "-n", "medaka", "/bin/bash", "-c"]
+
+## RUN /opt/conda/bin/conda activate medaka
+RUN mkdir /ont/
+RUN conda install -c bioconda nanofilt
+RUN conda install -c bioconda pycoqc
+
+# Add the oxford Nanopore repository to the container
+# ################################################
+
+RUN apt-get update
+RUN apt-get install wget lsb-release
+RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add -
+RUN echo "deb http://mirror.oxfordnanoportal.com/apt focal-stable non-free" |  tee /etc/apt/sources.list.d/nanoporetech.sources.list
+RUN apt-get update
+RUN apt update
+RUN apt install -y ont-guppy
+
+# Add Rerio models
+# ################################################
+RUN git clone https://github.com/nanoporetech/rerio /ont/rerio
+RUN /ont/rerio/download_model.py /ont/rerio/basecall_models/res_dna_r941_min_modbases-all-context_v001
+
+# Install porechop
+# ################################################
+RUN git clone https://github.com/rrwick/Porechop.git /ont/Porechop && \
+    cd /ont/Porechop && \
+    python3 setup.py install && \
+    porechop -h
+
+# Install Canu
+# ################################################
+RUN conda install -c conda-forge -c bioconda -c defaults canu
+
+RUN apt install -y cmake
+
+# Install Racon
+RUN git clone --recursive https://github.com/lbcb-sci/racon.git /ont/racon && \
+    cd /ont/racon && \
+    mkdir build && \
+    cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make install
