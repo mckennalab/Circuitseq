@@ -7,6 +7,7 @@ conda install -c bioconda nanofilt
 wget https://anaconda.org/bioconda/pycoqc/2.5.2/download/noarch/pycoqc-2.5.2-py_0.tar.bz2
 conda install pycoqc-2.5.2-py_0.tar.bz2
 conda install -c bioconda multiqc
+pip install ont-pyguppy-client-lib==5.0.11
 
 When done, containerize:
 https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in-a-singularity-container
@@ -19,7 +20,7 @@ https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in
 */
 
 
-input_fastq5_path  = Channel.fromPath(params.fast5)
+input_fastq5_path  = Channel.fromPath(params.fast5).first()
 input_tn5ref      = Channel.fromPath(params.tn5ref)
 input_tn5proj_base = Channel.fromPath("${params.tn5ref}.*")
 
@@ -28,8 +29,8 @@ input_bc_mat     = Channel.fromPath(params.bcmat)
 results_path = "results"
 minimum_file_size = 5000
 minimum_fastq_size = 50000
-
-
+rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
+guppy_server_path = "/usr/bin/guppy_basecall_server"
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -37,7 +38,7 @@ minimum_fastq_size = 50000
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
         .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
-        .into{sample_table; sample_table_assessment; sample_table_print}
+        .into{sample_table; sample_table_assessment; sample_table_print;  sample_table_methylation}
 
 /*
  * Basecalling using Guppy
@@ -119,7 +120,7 @@ process pycoQC {
 }
 
 
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print }
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print; methylation_reads }
 
 process LengthFilter {
     publishDir "$results_path/length_filter"
@@ -447,17 +448,16 @@ process LCPCorrection {
 read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
 read_phased_lcp.into{read_phased_lcp2}
 */
-
 process Rotated {
     errorStrategy 'finish'
     publishDir "$results_path/rotated"
    
     input:
-    val tuple_pack from nextpolish2_consensus_for_mars // read_phased_lcp2
+    val tuple_pack from nextpolish2_consensus_for_mars
     
     
     output:
-    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_eval
+    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_eval, rotated_reference_methyl
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -467,6 +467,79 @@ process Rotated {
     """
 }
 
+
+methylation_reads_samples = methylation_reads.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
+//methylation_phased = rotated_reference_methyl.phase(methylation_reads_samples)
+// methylation_phased.into{methylation_phased2}
+
+process Fast5Subset {
+    errorStrategy 'finish'
+    publishDir "$results_path/methylation"
+
+    input:
+    path input_path from input_fastq5_path
+    set str_name,reads from methylation_reads_samples
+    
+    output:
+    set str_name, path("${str_name}_fast5_subset") into fast5_subset
+    
+    script:
+    """
+    zcat ${reads} | awk '{if(NR%4==1) print \$1}' | sed -e "s/^@//" | cat > read_ids.txt
+    fast5_subset --input ${input_path} --save_path ${str_name}_fast5_subset --read_id_list read_ids.txt --filename_base subset --batch_size 10000 --recursive
+    
+    """
+}
+
+fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
+fast5_phased_base.into{fast5_phased; fast5_phased2}
+
+process MethylationCalling {
+    errorStrategy 'finish'
+    publishDir "$results_path/methylation"
+    maxForks 1
+
+    input:
+    val tuple_pack from fast5_phased
+    
+    output:
+    path("${str_name}_modified_bases.5mC.bed") into five_methyl
+    path("${str_name}_modified_bases.6mA.bed") into six_methyl
+
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    megalodon ${tuple_pack.get(1).get(1)} --outputs basecalls mappings mod_mappings mods \
+    --reference ${tuple_pack.get(0).get(1)} --mod-motif Z CCWGG 1 --mod-motif Y GATC 1 \
+    --devices 0 --processes 40 \
+    --guppy-server-path ${guppy_server_path} \
+    --guppy-config res_dna_r941_min_modbases-all-context_v001.cfg --guppy-params \"-d ${rerio_models}\"
+    cp megalodon_results/modified_bases.5mC.bed ${str_name}_modified_bases.5mC.bed
+    cp megalodon_results/modified_bases.6mA.bed ${str_name}_modified_bases.6mA.bed
+    """
+}
+
+process OGMethylationCalling {
+    errorStrategy 'finish'
+    publishDir "$results_path/methylation"
+    maxForks 1
+
+    input:
+    val tuple_pack from fast5_phased2
+    
+    output:
+    path("modPhred/${str_name}") into five_methyl2
+
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    /home/f002sd4/ont-dependencies/old-guppy-4-4-2/ont-guppy/bin/guppy_basecaller -x cuda:0 -c dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg --compress_fastq --fast5_out --disable_pings -ri ${tuple_pack.get(1).get(1)} -s basecalled_mod
+
+    /home/f002sd4/ont-dependencies/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace -t64
+    """
+}
 
 process ReferenceCopy {
     errorStrategy 'finish'
