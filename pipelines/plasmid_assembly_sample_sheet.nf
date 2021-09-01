@@ -24,13 +24,15 @@ input_fastq5_path  = Channel.fromPath(params.fast5).first()
 input_tn5ref      = Channel.fromPath(params.tn5ref)
 input_tn5proj_base = Channel.fromPath("${params.tn5ref}.*")
 
-// input_tn5proj_base.subscribe { println "value: $it" }
+
+// global variables
 input_bc_mat     = Channel.fromPath(params.bcmat)
 results_path = "results"
 minimum_file_size = 5000
 minimum_fastq_size = 50000
 rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
 guppy_server_path = "/usr/bin/guppy_basecall_server"
+
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -41,9 +43,7 @@ Channel.fromPath( params.samplesheet )
         .into{sample_table; sample_table_assessment; sample_table_print;  sample_table_methylation}
 
 /*
- * Basecalling using Guppy
- *
- * The main output is a channel input_fastq5_path which contains a merged fastq.gz file of all of passing reads
+ * Initial basecalling of all reads using Guppy
  */
 process GuppyBaseCalling {
     publishDir "$results_path/guppy"
@@ -70,6 +70,9 @@ process GuppyBaseCalling {
     """
 }
 
+/*
+ * split samples by their tagmentation barcode
+ */
 process GuppyDemultiplex {
     publishDir "$results_path/guppy_demultiplex"
 
@@ -96,7 +99,9 @@ process GuppyDemultiplex {
         --compress_fastq
     """
 }
-
+/*
+ * Run the pyco quality control step on all reads concurrently 
+ */
 process pycoQC {
     publishDir "$results_path/pycoQC"
 
@@ -119,9 +124,14 @@ process pycoQC {
     """
 }
 
-
+/*
+ * Take the channel of sample-split reads and filter out non-sample read collections, sending the results into multiple downstream channels
+ */
 fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print; methylation_reads }
 
+/*
+ * Filter out excessively long reads (concatemers of full-length plasmids) that ruin later assemblies
+ */
 process LengthFilter {
     publishDir "$results_path/length_filter"
     
@@ -140,7 +150,9 @@ process LengthFilter {
 }
 
 
-
+/*
+ * Chop off adapter sequences
+ */
 process Porechop {
     publishDir "$results_path/porechop"
     
@@ -158,14 +170,10 @@ process Porechop {
     """
 }
 
-
-// this is very nextflow -- we're going to consume the summary file many times (96), and we 
-// need to convert it into a value channel which can be reused again and again, instead of a 
-// queue channel. 
-basecalling_summary_file = basecalling_summary.first()
-
-// TODO: nanofilt needs to be installed
-process FilterReads {
+/*
+ * Filter reads by quality
+ */
+ process FilterReads {
     publishDir "$results_path/filter_reads"
     
     input:
@@ -184,10 +192,12 @@ process FilterReads {
 
 
 filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; filtered_reads_canu_print }
-//filtered_reads_canu_print.view { "name: ${it.get(1)} size ${it.get(1).countFastq()}" }
 
-// TODO: fix path to canu
-// TODO: Canu really struggles with low read counts, right now we're filtering out anything with a file size less than 100Kb
+/*
+ * We use Canu to make high-quality concensus sequences from the filtered reads
+ * TODO: fix path to canu
+ * TODO: Canu really struggles with low read counts, right now we're filtering out anything with a file size less than 100Kb
+*/
 process CanuCorrect {
     publishDir "$results_path/canu"
     
@@ -212,7 +222,10 @@ process CanuCorrect {
     """
 }
 
-// TODO: install miniasm in a better way
+/*
+ * Assemble corrected reads with Miniasm 
+ * TODO: install miniasm in a better way
+ */
 process Miniasm {
     publishDir "$results_path/miniasm"
     
@@ -234,14 +247,20 @@ process Miniasm {
     """
 }
 
+/*
+ * We need to 'phase', or line-up, the corrected reads with their assembly results
+ */
 read_phased = canu_corrected_convert.phase(miniasm_overlaps)
 
+/*
+ * Check for any really poor quality assemblies
+ */
 process ConvertGraph {
     errorStrategy 'finish'
     publishDir "$results_path/convert_graph"
     
     input:
-    val phased from read_phased.filter(){it.get(1).get(1).countLines() > 1} //[val(datasetID),path(corrected_reads)],[val(datasetID),val(miniasm_overlap)]] .filter{ tag, file -> !file.isEmpty() }
+    val phased from read_phased.filter(){it.get(1).get(1).countLines() > 1} 
     
     output:
     tuple val(str_name), path("${str_name}_contigs.fasta") into fasta_graph
@@ -268,10 +287,16 @@ process ConvertGraph {
     /$
 }
 
+/*
+ * phase the reads to the filtered assembly from the last step
+ */
 read_phased_racon = filtered_reads_racon.phase(fasta_graph)
 
-
-// TODO: install racon the right way
+/*
+ * Perform the first round of polishing with Racon
+ *
+ * TODO: install racon the right way
+ */
 process RaconPolish {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
@@ -294,10 +319,17 @@ process RaconPolish {
 }
 
 
-
+/*
+ * phase the racon corrected reference to the reads again
+ */
 read_phased_racon2 = filtered_reads_racon2.phase(racon_corrected)
 
-// TODO: install racon the right way
+/*
+ * Racon polish again
+ *
+ * TODO: install racon the right way
+ *
+ */
 process RaconPolish2 {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
@@ -319,11 +351,17 @@ process RaconPolish2 {
     """
 }
 
-
-
+/*
+ * again, phase the racon corrected reference to the reads
+ */
 read_phased_racon3 = filtered_reads_racon3.phase(racon_corrected2)
 
-// TODO: install racon the right way
+/*
+ * Racon polish again
+ *
+ * TODO: install racon the right way
+ *
+ */
 process RaconPolish3 {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
@@ -345,8 +383,14 @@ process RaconPolish3 {
     """
 }
 
+/*
+ * our last phase of the polished, racon corrected reference to the reads 
+ */
 read_phased_medaka = filtered_reads_medaka.phase(racon_corrected3)
 
+/*
+ * perform a Medaka Consensus of the reference
+ */
 process MedakaConsensus {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus"
@@ -365,11 +409,14 @@ process MedakaConsensus {
     """
 }
 
-//pilon_consensus.view { "value: $it" }
-//sample_table.view { "sample_table: $it" }
+/*
+ * phase our nextpolish reads to the medaka consensus
+ */
 read_phased_medaka_for_nextpolish = filtered_reads_nextpolish.phase(racon_medaka_consensus)
 
-
+/*
+ * develop a nextpolish consensus
+ */
 process NextPolish {
     errorStrategy 'finish'
     publishDir "$results_path/nextpolish"
@@ -384,6 +431,7 @@ process NextPolish {
     
     script:
     datasetID = tuple_pack.get(0).get(0)
+
     """
     cp ${params.nanopolish_run_config} ./run.cfg
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
@@ -394,9 +442,14 @@ process NextPolish {
     """
 }
 
-
+/*
+ * phase reads to the polished reference
+ */
 read_phased_nextpolish_for_nextpolish2 = filtered_reads_nextpolish2.phase(nextpolish_consensus)
 
+/*
+ * Polish the reference again with Nextpolish
+ */
 process NextPolish2CommaThePolishing {
     errorStrategy 'finish'
     publishDir "$results_path/nextpolish2"
@@ -421,19 +474,21 @@ process NextPolish2CommaThePolishing {
     """
 }
 
-//pilon_consensus.view { "value: $it" }
-//sample_table.view { "sample_table: $it" }
-read_phased_nextpolish2 = nextpolish_consensus2.phase(sample_table)
-read_phased_nextpolish2.into{nextpolish2_consensus_for_mars; nextpolish_consensus2_for_copy}
 /*
+ * phase the polished assembly to our sample information, and make two copies
+ */
+read_phased_nextpolish2 = nextpolish_consensus2.phase(sample_table)
+read_phased_nextpolish2.into{nextpolish2_consensus_for_LCP; nextpolish_consensus2_for_copy}
+
+/*
+ * try to address issues with large duplicated segments in the resulting plasmids
+ */
 process LCPCorrection {
     errorStrategy 'finish'
     publishDir "$results_path/lcp"
    
     input:
-    val tuple_pack from nextpolish2_consensus_for_mars
-    //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
-
+    val tuple_pack from nextpolish2_consensus_for_LCP
     
     output:
     set str_name, path("${str_name}_corrected.fasta") into lcp_corrected
@@ -445,9 +500,16 @@ process LCPCorrection {
     python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
     """
 }
+
+/*
+ * phase this new reference with the sample table
+ */
 read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
 read_phased_lcp.into{read_phased_lcp2}
-*/
+
+/*
+ * attempt to align the known reference and our assembly for downstream comparison
+ */
 process Rotated {
     errorStrategy 'finish'
     publishDir "$results_path/rotated"
@@ -467,11 +529,14 @@ process Rotated {
     """
 }
 
-
+/*
+ * take the orginal barcode split reads and extract a sample name for methylation analysis
+ */
 methylation_reads_samples = methylation_reads.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
-//methylation_phased = rotated_reference_methyl.phase(methylation_reads_samples)
-// methylation_phased.into{methylation_phased2}
 
+/*
+ * Given the barcode split read names, extract their signals from the Fast5 file
+ */
 process Fast5Subset {
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
@@ -491,10 +556,16 @@ process Fast5Subset {
     """
 }
 
+/*
+ * Create two read piles for each of the methylation types
+ */
 fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
 fast5_phased_base.into{fast5_phased; fast5_phased2}
 
-process MethylationCalling {
+/*
+ * Call base methylation using Megalodon with experimental rerio models
+ */
+process MegalodonMethylationCalling {
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
     maxForks 1
@@ -519,7 +590,9 @@ process MethylationCalling {
     cp megalodon_results/modified_bases.6mA.bed ${str_name}_modified_bases.6mA.bed
     """
 }
-
+/*
+ * Call methylation using an older guppy model modPhred
+ */
 process OGMethylationCalling {
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
@@ -541,13 +614,15 @@ process OGMethylationCalling {
     """
 }
 
+/*
+ * Create a reference file with the name from the sample table
+ */
 process ReferenceCopy {
     errorStrategy 'finish'
     publishDir "$results_path/reference_copy"
    
     input:
     val tuple_pack from nextpolish_consensus2_for_copy
-    //set samplePosition, sample_ID, reads1, reads2, [sangers]  from sample_table
 
     
     output:
@@ -563,6 +638,9 @@ process ReferenceCopy {
     """
 }
 
+/*
+ * Create an alignment of the reads to the final reference using minimap
+ */
 reference_and_reads = porechop_output_for_minimap.phase(rotated_reference_minimap)
 reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
 
@@ -588,7 +666,9 @@ process AlignReads {
     samtools index ${str_name}_sorted_mapped_reads.bam
     """
 }
-
+/*
+ * Create an alignment of the reference and the known map
+ */
 process AlignReferences {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
@@ -608,6 +688,9 @@ process AlignReferences {
     """
 }
 
+/*
+ * assess the map-reference alignment
+ */
 process PlasmidComparison {
     errorStrategy 'finish'
     publishDir "$results_path/plasmid_comp"
@@ -625,8 +708,9 @@ process PlasmidComparison {
     """
 }
 
-// plasmid_comp.collect.into{plasmid_stats}
-
+/*
+ * aggregate all the plasmid comparisons into a single file
+ */
 process PlasmidComparisonCollection {
     errorStrategy 'finish'
     publishDir "$results_path/plasmid_stat"
