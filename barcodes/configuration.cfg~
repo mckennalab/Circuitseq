@@ -1,0 +1,22 @@
+# Guppy Barcoding Configuration
+arrangements_files = barcode_arrs_plasmid96.cfg
+score_matrix_filename = 5x5_mismatch_matrix.txt
+start_gap1 = 40
+end_gap1 = 40
+open_gap1 = 40
+extend_gap1 = 40
+start_gap2 = 40
+end_gap2 = 40
+open_gap2 = 160
+extend_gap2 = 160
+min_score = 60.0
+front_window_size = 150
+rear_window_size = 150
+
+# LAMP detection configuration
+lamp_arrangements_files =  barcode_arrs_ncov8.cfg barcode_arrs_ncov96.cfg barcode_arrs_multivirus1.cfg barcode_arrs_multivirus8.cfg
+min_score_lamp = 80
+min_score_lamp_mask = 50
+min_score_lamp_target = 50
+min_length_lamp_context = 30
+min_length_lamp_target = 70
