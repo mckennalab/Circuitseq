@@ -1,3 +1,9 @@
+
+# ========================================================================================
+#                          suffix array deduplicator
+# ========================================================================================
+#  attempt to remove duplicated segments that are 'too large' from the assembly
+# ----------------------------------------------------------------------------------------
 import numpy as np
 from pydivsufsort import divsufsort, kasai
 import argparse
@@ -175,9 +181,11 @@ class CoverageMap:
             # print(segment1)
             # print(segment2)
             # print(segment3)
-            return (segment1 + segment2 + segment3, segment_positions)
+            print((segment1 + segment2 + segment3, segment_positions))
+            return ((segment1 + segment2 + segment3, segment_positions))
         else:
-            return (self.string, (0, 0, 0, 0, 0))
+            print((self.string, (0, 0, 0, 0, 0)))
+            return((self.string, (0, 0, 0, 0, 0)))
 
 
 def find_overlapping_fragments(input_string, minimum_length, spacing):
@@ -198,6 +206,8 @@ def find_overlapping_fragments(input_string, minimum_length, spacing):
             rotation_string, strsuffix_array, string_lcp_array, minimum_length
         )
         new_ref = cmap.subset_reference_to_repeat_free(300)
+
+        print(new_ref)
         if new_ref[1][4] > best_rep_length:
             best_ref = new_ref
             best_rep_length = new_ref[1][4]
