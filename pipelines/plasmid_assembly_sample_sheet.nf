@@ -53,7 +53,7 @@ process GuppyBaseCalling {
 
     output:
     path "basecalling/pass/" into basecalled_directory
-    path "basecalling/sequencing_summary.txt" into basecalling_summary, basecalling_summary_for_pyco   // the fastq output file path
+    path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
     script:
         
@@ -497,7 +497,7 @@ process LCPCorrection {
     str_name = tuple_pack.get(0).get(0)
 
     """
-    python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
+    python /analysis/2021_08_26_PlasmidSeq_paper/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
     """
 }
 
@@ -515,7 +515,7 @@ process Rotated {
     publishDir "$results_path/rotated"
    
     input:
-    val tuple_pack from nextpolish2_consensus_for_mars
+    val tuple_pack from read_phased_lcp2
     
     
     output:
