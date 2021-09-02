@@ -1,7 +1,7 @@
 # Run with 'DOCKER_BUILDKIT=1 docker build --secret id=mysecret,src=mysecret.txt ./', where mysecret.txt is the 
 
 # Start from the NVIDIA CUDA Docker image built on top of Ubuntu 20
-FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04
+FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04:devel
 
 # basic setup -- update the instance
 # ################################################

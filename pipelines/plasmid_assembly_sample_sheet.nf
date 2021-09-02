@@ -19,7 +19,6 @@ https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in
 ----------------------------------------------------------------------------------------
 */
 
-
 input_fastq5_path  = Channel.fromPath(params.fast5).first()
 input_tn5ref      = Channel.fromPath(params.tn5ref)
 input_tn5proj_base = Channel.fromPath("${params.tn5ref}.*")
@@ -32,7 +31,7 @@ minimum_file_size = 5000
 minimum_fastq_size = 50000
 rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
 guppy_server_path = "/usr/bin/guppy_basecall_server"
-
+barcode_location = "/analysis/2021_05_06_nanopore_pipeline/2021_05_25_nanopore_24_plasmids/guppy_plasmid_barcodes/"
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -46,6 +45,8 @@ Channel.fromPath( params.samplesheet )
  * Initial basecalling of all reads using Guppy
  */
 process GuppyBaseCalling {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+
     publishDir "$results_path/guppy"
 
     input:
@@ -89,7 +90,7 @@ process GuppyDemultiplex {
     guppy_barcoder \\
         --input_path ${basecalled} \\
         --save_path saved_data \\
-        --data_path ${params.barcodes} \\
+        --data_path ${barcode_location} \\
         --barcode_kits MY-CUSTOM-BARCODES \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
@@ -212,7 +213,7 @@ process CanuCorrect {
     """
     rm -rf ${datasetID}_canu_correct
     mkdir ${datasetID}_canu_correct
-    /analysis/2021_05_06_nanopore_pipeline/canu-2.1.1/bin/canu -correct \
+    canu -correct \
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
      stopOnLowCoverage=2 minInputCoverage=2 \
@@ -567,7 +568,7 @@ fast5_phased_base.into{fast5_phased; fast5_phased2}
  */
 process MegalodonMethylationCalling {
     errorStrategy 'finish'
-    publishDir "$results_path/methylation"
+    publishDir "$results_path/methylation/$str_name/"
     maxForks 1
 
     input:
