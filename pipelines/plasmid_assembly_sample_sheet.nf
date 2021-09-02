@@ -31,7 +31,7 @@ minimum_file_size = 5000
 minimum_fastq_size = 50000
 rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
 guppy_server_path = "/usr/bin/guppy_basecall_server"
-barcode_location = "/analysis/2021_05_06_nanopore_pipeline/2021_05_25_nanopore_24_plasmids/guppy_plasmid_barcodes/"
+barcode_location = "/plasmidseq/barcodes/"
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -75,6 +75,8 @@ process GuppyBaseCalling {
  * split samples by their tagmentation barcode
  */
 process GuppyDemultiplex {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+
     publishDir "$results_path/guppy_demultiplex"
 
     input:
@@ -567,6 +569,8 @@ fast5_phased_base.into{fast5_phased; fast5_phased2}
  * Call base methylation using Megalodon with experimental rerio models
  */
 process MegalodonMethylationCalling {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+
     errorStrategy 'finish'
     publishDir "$results_path/methylation/$str_name/"
     maxForks 1
@@ -595,6 +599,8 @@ process MegalodonMethylationCalling {
  * Call methylation using an older guppy model modPhred
  */
 process OGMethylationCalling {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
     maxForks 1
