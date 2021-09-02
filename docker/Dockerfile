@@ -1,7 +1,7 @@
-# Run with 'DOCKER_BUILDKIT=1 docker build --secret id=mysecret,src=mysecret.txt ./', where mysecret.txt is the 
+## with 'DOCKER_BUILDKIT=1 docker build --secret id=mysecret,src=mysecret.txt ./', where mysecret.txt is the 
 
 # Start from the NVIDIA CUDA Docker image built on top of Ubuntu 20
-FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04:devel
+FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04
 
 # basic setup -- update the instance
 # ################################################
@@ -103,3 +103,6 @@ RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secret
 # ################################################
 ENV CONDA_DEFAULT_ENV "plasmidseq"
 RUN echo "source activate plasmidseq" > ~/.bashrc
+
+
+ENTRYPOINT [ "/bin/bash", "--login", "-c" ]
