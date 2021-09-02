@@ -1,6 +1,7 @@
+# Run with 'DOCKER_BUILDKIT=1 docker build --secret id=mysecret,src=mysecret.txt ./', where mysecret.txt is the 
+
 # Start from the NVIDIA CUDA Docker image built on top of Ubuntu 20
 FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04
-
 
 # basic setup -- update the instance
 # ################################################
@@ -15,24 +16,28 @@ ENV TZ=America/New_York
 RUN apt-get install -y wget unzip net-tools emboss gnupg2 bash make gcc g++ zlib1g-dev libboost-all-dev curl libhdf5-serial-dev libssl-dev git build-essential
 # libcurl3 libhdf5-cpp-11 libssl1.0.0
 
+SHELL [ "/bin/bash", "--login", "-c" ]
+
 # Add conda to the instance and setup an env.
 # ################################################
-RUN wget \
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_DIR \
     && rm -f Miniconda3-latest-Linux-x86_64.sh \
     && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 
-ENV PATH="/opt/conda/bin/:${PATH}"
+ENV PATH=$CONDA_DIR/bin:$PATH
 
-RUN conda create -n medaka -c conda-forge -c bioconda medaka
+RUN echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.profile
 
+RUN conda create -n plasmidseq -c conda-forge -c bioconda python=3.8
+SHELL ["conda", "run", "-n", "plasmidseq", "/bin/bash", "-c"]
 
-# from https://pythonspeed.com/articles/activate-conda-dockerfile/#working
-SHELL ["conda", "run", "-n", "medaka", "/bin/bash", "-c"]
 
 ## RUN /opt/conda/bin/conda activate medaka
 RUN mkdir /ont/
+RUN python --version 1>&2 
 RUN conda install -c bioconda nanofilt
 RUN conda install -c bioconda pycoqc
 
@@ -72,3 +77,29 @@ RUN git clone --recursive https://github.com/lbcb-sci/racon.git /ont/racon && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make install
+
+
+# install miniasm and minimap2 
+# ################################################
+RUN conda install -c bioconda miniasm minimap2
+
+# install nextpolish
+# ################################################
+RUN apt install -y libncurses5-dev libncursesw5-dev libbz2-dev libclang-dev liblzma-dev
+RUN pip install psutil
+RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.3.1/NextPolish.tgz -O /ont/NextPolish.tgz && \
+    cd /ont/ && \
+    tar -vxzf NextPolish.tgz && cd NextPolish && make
+ENV PATH="/opt/NextPolish/:${PATH}"
+
+# cp the github pipeline files 
+# ################################################
+RUN mkdir /plasmidseq/
+
+RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+
+# the last thing we do is setup the conda env when we use the container
+# this part has been a nightmare to get right
+# ################################################
+ENV CONDA_DEFAULT_ENV "plasmidseq"
+RUN echo "source activate plasmidseq" > ~/.bashrc
