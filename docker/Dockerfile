@@ -102,7 +102,6 @@ RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secret
 # this part has been a nightmare to get right
 # ################################################
 ENV CONDA_DEFAULT_ENV "plasmidseq"
-RUN echo "source activate plasmidseq" > ~/.bashrc
 
-
-ENTRYPOINT [ "/bin/bash", "--login", "-c" ]
+COPY entry_point.sh /
+ENTRYPOINT ["/entry_point.sh"]
