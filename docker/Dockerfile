@@ -111,3 +111,5 @@ RUN wget -O /ont/samtools-1.11.tar.bz2 https://github.com/samtools/samtools/rele
 RUN pip install numpy==1.19.5
 
 RUN pip install pydivsufsort
+
+RUN pip install megalodon
