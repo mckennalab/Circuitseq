@@ -113,3 +113,15 @@ RUN pip install numpy==1.19.5
 RUN pip install pydivsufsort
 
 RUN pip install megalodon
+
+RUN mkdir /og_methyl/
+
+COPY ont-guppy_4.4.2_linux64.tar.gz /og_methyl/
+
+RUN cd /og_methyl/ && tar -xf ont-guppy_4.4.2_linux64.tar.gz 
+
+RUN git clone https://github.com/novoalab/modPhred /og_methyl/modPhred && \
+    pip install matplotlib pysam pandas seaborn && \
+    pip install pyguppyclient==0.0.9
+
+RUN pip install ont-pyguppy-client-lib==5.0.11
