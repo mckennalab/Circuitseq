@@ -607,33 +607,6 @@ process MegalodonMethylationCalling {
     """
 }
 /*
- * Call methylation using an older guppy model modPhred
- */
-process OGMethylationCalling {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-    beforeScript 'chmod o+rw .'
-
-    errorStrategy 'finish'
-    publishDir "$results_path/methylation"
-    maxForks 1
-
-    input:
-    val tuple_pack from fast5_phased2
-    
-    output:
-    path("modPhred/${str_name}") into five_methyl2
-
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    /home/f002sd4/ont-dependencies/old-guppy-4-4-2/ont-guppy/bin/guppy_basecaller -x cuda:0 -c dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg --compress_fastq --fast5_out --disable_pings -ri ${tuple_pack.get(1).get(1)} -s basecalled_mod
-
-    /home/f002sd4/ont-dependencies/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace -t64
-    """
-}
-
-/*
  * Create a reference file with the name from the sample table
  */
 process ReferenceCopy {
