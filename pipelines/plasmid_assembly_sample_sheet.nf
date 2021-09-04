@@ -1,16 +1,6 @@
 #!/usr/bin/env nextflow
 
 /*
-conda create -n medaka -c conda-forge -c bioconda medaka
-conda activate medaka
-conda install -c bioconda nanofilt
-wget https://anaconda.org/bioconda/pycoqc/2.5.2/download/noarch/pycoqc-2.5.2-py_0.tar.bz2
-conda install pycoqc-2.5.2-py_0.tar.bz2
-conda install -c bioconda multiqc
-pip install ont-pyguppy-client-lib==5.0.11
-
-When done, containerize:
-https://stackoverflow.com/questions/54678805/containerize-a-conda-environment-in-a-singularity-container
 
 ========================================================================================
                          mckenna_lab/plasmid_seq
@@ -46,7 +36,7 @@ Channel.fromPath( params.samplesheet )
  */
 process GuppyBaseCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-
+    beforeScript 'chmod o+rw .'
     publishDir "$results_path/guppy"
 
     input:
@@ -68,6 +58,7 @@ process GuppyBaseCalling {
         --compress_fastq
         
     guppy_basecaller --version &> v_guppy.txt
+    chmod -R 777 ./
     """
 }
 
@@ -76,7 +67,7 @@ process GuppyBaseCalling {
  */
 process GuppyDemultiplex {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-
+    beforeScript 'chmod o+rw .'
     publishDir "$results_path/guppy_demultiplex"
 
     input:
@@ -85,7 +76,8 @@ process GuppyDemultiplex {
     output:
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary   // the fastq output file path
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
-
+    
+    
     script:
         
     """
@@ -100,6 +92,7 @@ process GuppyDemultiplex {
         --min_score $params.barcode_min_score \\
         -q 1000000 \\
         --compress_fastq
+    chmod -R o+rw ./
     """
 }
 /*
@@ -107,6 +100,7 @@ process GuppyDemultiplex {
  */
 process pycoQC {
     publishDir "$results_path/pycoQC"
+    beforeScript 'chmod o+rw .'
 
     input:
     path basecalling_summary from basecalling_summary_for_pyco
@@ -119,6 +113,8 @@ process pycoQC {
     script:
         
     """
+    bash && \\
+    python --version > python_version.txt
     pycoQC \\
         --summary_file $basecalling_summary \\
         --barcode_file $barcode_summary \\
@@ -137,7 +133,8 @@ fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent()
  */
 process LengthFilter {
     publishDir "$results_path/length_filter"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple datasetID, path(fastq) from guppy_demulti.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
 
@@ -158,7 +155,8 @@ process LengthFilter {
  */
 process Porechop {
     publishDir "$results_path/porechop"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple val(datasetID), file(fastq) from length_output
     output:
@@ -166,10 +164,10 @@ process Porechop {
     script:
         
     """
-    /home/f002sd4/plasmid_seq/Porechop_for_plasmidseq/porechop-runner.py -i ${fastq} -o ${datasetID}_porechop.fq.gz \
-                                                            --format fastq.gz \
-                                                            --end_threshold  50 --extra_end_trim 10 \
-                                                            --discard_middle --middle_threshold 80
+    porechop -i ${fastq} -o ${datasetID}_porechop.fq.gz \
+        --format fastq.gz \
+        --end_threshold  50 --extra_end_trim 10 \
+        --discard_middle --middle_threshold 80
     """
 }
 
@@ -178,7 +176,8 @@ process Porechop {
  */
  process FilterReads {
     publishDir "$results_path/filter_reads"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple val(datasetID), file(tofilter) from porechop_output
     path summary from basecalling_summary_file
@@ -203,7 +202,8 @@ filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; 
 */
 process CanuCorrect {
     publishDir "$results_path/canu"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple val(datasetID), file(to_correct) from filtered_reads_canu
     
@@ -231,7 +231,8 @@ process CanuCorrect {
  */
 process Miniasm {
     publishDir "$results_path/miniasm"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple val(datasetID), path(corrected_reads) from canu_corrected_miniasm
 
@@ -261,7 +262,8 @@ read_phased = canu_corrected_convert.phase(miniasm_overlaps)
 process ConvertGraph {
     errorStrategy 'finish'
     publishDir "$results_path/convert_graph"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     val phased from read_phased.filter(){it.get(1).get(1).countLines() > 1} 
     
@@ -303,7 +305,8 @@ read_phased_racon = filtered_reads_racon.phase(fasta_graph)
 process RaconPolish {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_racon.filter{ it.get(1).get(1).countFasta()>=1} 
 
@@ -336,7 +339,8 @@ read_phased_racon2 = filtered_reads_racon2.phase(racon_corrected)
 process RaconPolish2 {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_racon2.filter{ it.get(1).get(1).countFasta()>=1} 
 
@@ -368,7 +372,8 @@ read_phased_racon3 = filtered_reads_racon3.phase(racon_corrected2)
 process RaconPolish3 {
     errorStrategy 'finish'
     publishDir "$results_path/racon_polish"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_racon3.filter{ it.get(1).get(1).countFasta()>=1} 
 
@@ -397,7 +402,8 @@ read_phased_medaka = filtered_reads_medaka.phase(racon_corrected3)
 process MedakaConsensus {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_medaka.filter{ it.get(1).get(1).countFasta()>=1} 
     
@@ -407,8 +413,9 @@ process MedakaConsensus {
     script:
     str_name = tuple_pack.get(0).get(0)
     """
+    chmod -R a+rw ./
     medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
-
+    chmod -R a+rw ./
     """
 }
 
@@ -423,10 +430,11 @@ read_phased_medaka_for_nextpolish = filtered_reads_nextpolish.phase(racon_medaka
 process NextPolish {
     errorStrategy 'finish'
     publishDir "$results_path/nextpolish"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_medaka_for_nextpolish.filter{ it.get(1).get(1).countFasta()>=1} 
-
+    path config from params.nanopolish_run_config
     output:
     
     set datasetID, file("${datasetID}.nextpolish.fasta") into nextpolish_consensus, nextpolish_consensus_assessment
@@ -436,10 +444,9 @@ process NextPolish {
     datasetID = tuple_pack.get(0).get(0)
 
     """
-    cp ${params.nanopolish_run_config} ./run.cfg
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    ${params.nanopolish} run.cfg
+    ${params.nanopolish} ./run.cfg
     cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish.fasta
     cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish.fasta.stat
     """
@@ -456,9 +463,11 @@ read_phased_nextpolish_for_nextpolish2 = filtered_reads_nextpolish2.phase(nextpo
 process NextPolish2CommaThePolishing {
     errorStrategy 'finish'
     publishDir "$results_path/nextpolish2"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from read_phased_nextpolish_for_nextpolish2.filter{ it.get(1).get(1).countFasta()>=1} 
+    path config from params.nanopolish_run_config
 
     output:
     
@@ -468,7 +477,6 @@ process NextPolish2CommaThePolishing {
     script:
     datasetID = tuple_pack.get(0).get(0)
     """
-    cp ${params.nanopolish_run_config} ./run.cfg
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
     ${params.nanopolish} run.cfg
@@ -489,7 +497,8 @@ read_phased_nextpolish2.into{nextpolish2_consensus_for_LCP; nextpolish_consensus
 process LCPCorrection {
     errorStrategy 'finish'
     publishDir "$results_path/lcp"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from nextpolish2_consensus_for_LCP
     
@@ -500,7 +509,7 @@ process LCPCorrection {
     str_name = tuple_pack.get(0).get(0)
 
     """
-    python /analysis/2021_08_26_PlasmidSeq_paper/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
+    python /plasmidseq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
     """
 }
 
@@ -508,7 +517,6 @@ process LCPCorrection {
  * phase this new reference with the sample table
  */
 read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
-read_phased_lcp.into{read_phased_lcp2}
 
 /*
  * attempt to align the known reference and our assembly for downstream comparison
@@ -516,9 +524,10 @@ read_phased_lcp.into{read_phased_lcp2}
 process Rotated {
     errorStrategy 'finish'
     publishDir "$results_path/rotated"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
-    val tuple_pack from read_phased_lcp2
+    val tuple_pack from read_phased_lcp
     
     
     output:
@@ -528,7 +537,7 @@ process Rotated {
     str_name = tuple_pack.get(0).get(0)
 
     """
-    python /analysis/2021_05_06_nanopore_pipeline/PlasmidSeq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
+    python /plasmidseq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
     """
 }
 
@@ -543,6 +552,7 @@ methylation_reads_samples = methylation_reads.map { file -> tuple( (file.toStrin
 process Fast5Subset {
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
+    beforeScript 'chmod o+rw .'
 
     input:
     path input_path from input_fastq5_path
@@ -570,6 +580,7 @@ fast5_phased_base.into{fast5_phased; fast5_phased2}
  */
 process MegalodonMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+    beforeScript 'chmod o+rw .'
 
     errorStrategy 'finish'
     publishDir "$results_path/methylation/$str_name/"
@@ -600,6 +611,7 @@ process MegalodonMethylationCalling {
  */
 process OGMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+    beforeScript 'chmod o+rw .'
 
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
@@ -627,7 +639,8 @@ process OGMethylationCalling {
 process ReferenceCopy {
     errorStrategy 'finish'
     publishDir "$results_path/reference_copy"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     val tuple_pack from nextpolish_consensus2_for_copy
 
@@ -653,7 +666,8 @@ reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
 
 process AlignReads {
     publishDir "$results_path/minimap_final"
-    
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple reads,reference from reference_and_reads_align // reads and reference 
 
@@ -679,7 +693,8 @@ process AlignReads {
 process AlignReferences {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple sample, assembled, ref from rotated_reference_align
     
@@ -701,7 +716,8 @@ process AlignReferences {
 process PlasmidComparison {
     errorStrategy 'finish'
     publishDir "$results_path/plasmid_comp"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     tuple sample, assembled, ref from rotated_reference_eval
     
@@ -721,7 +737,8 @@ process PlasmidComparison {
 process PlasmidComparisonCollection {
     errorStrategy 'finish'
     publishDir "$results_path/plasmid_stat"
-   
+    beforeScript 'chmod o+rw .'
+
     input:
     file stats from plasmid_comp.toList()
     
