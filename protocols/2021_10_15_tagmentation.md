@@ -24,9 +24,10 @@
 
 This step differs depending on how many samples are being used. In general, you want 2-5ug of plasmid (total) so if you are sequencing 20 plasmids you want to put more plasmid and Tn5 per sample than if you were doing 96 plasmids
 Set up the tagmentation reaction in the following order:
-1 - Plasmid
-2 - Barcode
-3 - Master mix (Tn5, EzTn5 buffer, DTT, water)
+
+1. - Plasmid
+2. - Barcode
+3. - Master mix (Tn5, EzTn5 buffer, DTT, water)
 
 ### Tagmentation reaction 
 
