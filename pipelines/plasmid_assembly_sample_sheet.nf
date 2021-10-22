@@ -21,7 +21,7 @@ minimum_file_size = 5000
 minimum_fastq_size = 50000
 rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
 guppy_server_path = "/usr/bin/guppy_basecall_server"
-barcode_location = "/plasmidseq/barcodes/"
+barcode_location = "/plasmidseq/barcodes/v2/"
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -29,7 +29,7 @@ barcode_location = "/plasmidseq/barcodes/"
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
         .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
-        .into{sample_table; sample_table_assessment; sample_table_print;  sample_table_methylation}
+        .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
 
 /*
  * Initial basecalling of all reads using Guppy
@@ -95,6 +95,7 @@ process GuppyDemultiplex {
     chmod -R o+rw ./
     """
 }
+
 /*
  * Run the pyco quality control step on all reads concurrently 
  */
@@ -126,7 +127,33 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and filter out non-sample read collections, sending the results into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print; methylation_reads }
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print; methylation_reads; guppy_alignment; guppy_length_align; guppy_porechop_align }
+
+raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }.phase(sample_table_pre_merge)
+
+process AlignReadsPre {
+    publishDir "$results_path/minimap_initial"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple reads,reference from raw_reads_for_alignment // reads and reference 
+
+    output:
+    tuple val(str_name), path("${str_name}_sorted_premapped_reads.bam") into minimap_pre_reads
+    tuple val(str_name), path("${str_name}_sorted_premapped_reads.bam.bai") into minimap_pre_reads_bai
+    path("${str_name}.fasta.dict") into sequence_dict_pre
+    path("${str_name}.fasta") into sequence_fasta_pre
+    
+    script:
+    str_name = reads.get(0)
+
+    """
+    cp ${reference.get(2)} ${str_name}.fasta
+    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
+    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_premapped_reads.bam
+    samtools index ${str_name}_sorted_premapped_reads.bam
+    """
+}
 
 /*
  * Filter out excessively long reads (concatemers of full-length plasmids) that ruin later assemblies
@@ -139,7 +166,7 @@ process LengthFilter {
     tuple datasetID, path(fastq) from guppy_demulti.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
 
     output:
-    tuple datasetID,"${datasetID}_length_filtered.fq.gz" into length_output
+    tuple datasetID,"${datasetID}_length_filtered.fq.gz" into length_output, length_for_alignment
     script:
         
     """
@@ -149,6 +176,31 @@ process LengthFilter {
     """
 }
 
+raw_reads_for_lf_alignment = length_for_alignment.phase(sample_table_pre_lf)
+
+process AlignReadsPostLengthFilter {
+    publishDir "$results_path/minimap_length_filter"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple reads,reference from raw_reads_for_lf_alignment // reads and reference 
+
+    output:
+    tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
+    tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam.bai") into minimap_post_lf_reads_bai
+    path("${str_name}.fasta.dict") into sequence_dict_post_lf
+    path("${str_name}.fasta") into sequence_fasta_post_lf
+    
+    script:
+    str_name = reads.get(0)
+
+    """
+    cp ${reference.get(2)} ${str_name}.fasta
+    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
+    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
+    samtools index ${str_name}_sorted_post_lf_reads.bam
+    """
+}
 
 /*
  * Chop off adapter sequences
@@ -471,7 +523,7 @@ process NextPolish2CommaThePolishing {
 
     output:
     
-    set datasetID, file("${datasetID}.nextpolish2.fasta") into nextpolish_consensus2, nextpolish_consensus_assessment2
+    set datasetID, file("${datasetID}.nextpolish2.fasta") into nextpolish_consensus2, nextpolish_consensusTest, nextpolish_consensus_assessment2
     set datasetID, file("${datasetID}.nextpolish2.fasta.stat") into nextpolish_consensus_stat2, nextpolish_consensus_assessment_stat2
     
     script:
@@ -609,7 +661,7 @@ process MegalodonMethylationCalling {
 
 /*
  * Call methylation using an older guppy model and modPhred
- */
+  */
 process OGMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
     beforeScript 'chmod o+rw .'
@@ -626,12 +678,13 @@ process OGMethylationCalling {
     str_name = tuple_pack.get(0).get(0)
     """
     /og_methyl/ont-guppy/bin/guppy_basecaller -x cuda:0 -c dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg --compress_fastq --fast5_out --disable_pings -ri ${tuple_pack.get(1).get(1)} -s basecalled_mod
-    /og_methyl/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace -t64
+    /og_methyl/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace
     """
 }
 /*
  * Create a reference file with the name from the sample table
  */
+
 process ReferenceCopy {
     errorStrategy 'finish'
     publishDir "$results_path/reference_copy"
@@ -686,23 +739,28 @@ process AlignReads {
 /*
  * Create an alignment of the reference and the known map
  */
+
+read_phased_for_alignment = rotated_reference_align.phase(sample_table_assessment2)
+
 process AlignReferences {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple sample, assembled, ref from rotated_reference_align
+    val tuple_pack from read_phased_for_alignment
     
     output:
-    set sample, path("${sample}_aligned.fasta") into needleall_fasta
+    set sample_ID, path("${sample_ID}_aligned.fasta") into needleall_fasta
     
     script:
-
+    known_ref = tuple_pack.get(1).get(2)
+    sample_ID = tuple_pack.get(0).get(0)
+    assembled = tuple_pack.get(0).get(2)
     """
-    cat ${ref} ${assembled} > full.fa
+    cat ${known_ref} ${assembled} > full.fa
 
-    needleall -asequence ${ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample}_aligned.fasta
+    needleall -asequence ${known_ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample_ID}_aligned.fasta
     """
 }
 
@@ -746,5 +804,28 @@ process PlasmidComparisonCollection {
     """
     echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
     cat header.txt ${stats.collect().join(" ")} > all_rotated.stats
+    """
+}
+
+/*
+ * aggregate all the plasmid comparisons into a single file
+ */
+process AnnotatePlasmid {
+    errorStrategy 'finish'
+    publishDir "$results_path/annotated"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple name,reference from sample_copy
+    
+    output:
+    path("${name}_annotations") into annotation_dir
+    
+    script:
+
+    """
+    mkdir ${name}_annotations 
+    plannotate batch -i ${reference} -o ${name}_annotations -f ${name} -b /plasmidseq/pLannotate/BLAST_dbs/
+
     """
 }

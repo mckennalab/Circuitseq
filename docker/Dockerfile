@@ -125,3 +125,24 @@ RUN git clone https://github.com/novoalab/modPhred /og_methyl/modPhred && \
     pip install pyguppyclient==0.0.9
 
 RUN pip install ont-pyguppy-client-lib==5.0.11
+
+## setup the annotation tool
+RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
+    cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
+RUN wget https://github.com/barricklab/pLannotate/releases/download/v1.0.3/BLAST_dbs.tar.gz -O /plasmidseq/pLannotate/BLAST_dbs.tar.gz && \
+    cd /plasmidseq/pLannotate/ && tar -xzf BLAST_dbs.tar.gz
+
+RUN wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz -O /plasmidseq/ncbi-blast-2.12.0+-x64-linux.tar.gz && \
+    cd /plasmidseq/ && tar xf ncbi-blast-2.12.0+-x64-linux.tar.gz
+    
+ENV PATH="/plasmidseq/ncbi-blast-2.12.0+/bin/:${PATH}"
+
+RUN apt install infernal
+
+RUN mkdir /plasmidseq/diamond
+
+RUN wget http://github.com/bbuchfink/diamond/releases/download/v2.0.12/diamond-linux64.tar.gz -O /plasmidseq/diamond/diamond-linux64.tar.gz
+
+RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz 
+
+ENV PATH="/plasmidseq/diamond/:${PATH}"
