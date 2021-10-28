@@ -1,0 +1,97 @@
+position	sample	reference	sangers
+1	pCAG_GFP_25G	references/pCAG_GFP_25G.fasta	
+13	PB_BSD_STOP	references/PB_BSD_STOP.fasta	
+25	pX330-antiCAG	references/pX330-antiCAG.fasta	
+37	pX330-antiOGROsa	references/pX330-antiOGROsa.fasta	sangers/51B_002_FEE-175_CAB_D03.ab1
+49	pX330-antiNewROSA	references/pX330-antiNewROSA.fasta	sangers/51B_002_FEE-175_CAB_D03.ab1
+61	PB_MerCreMer	references/PB_MerCreMer.fasta	
+73	PB_BSD_STOP_Cas12a	references/PB_BSD_STOP_Cas12a.fasta	
+86	PB_3xSTOP	references/PB_3xSTOP.fasta	
+2	pMEGA_v1	references/pMEGA_v1.fasta	sangers/51H_004_FEE-172_ADY_E11.ab1,sangers/51H_003_FEE-172_AHV_D11.ab1
+14	pLARRY_U6_Empty	references/pLARRY_U6_Empty.fasta	sangers/119804_D05_021.ab1
+26	pLARRY_U6_D7G	references/pLARRY_U6_D7G.fasta	sangers/51D_015_FEE-165_ADY_F06.ab1
+38	pLARRY_U6D7TG	references/pLARRY_U6D7TG.fasta	sangers/120576_H11_041.ab1
+50	pX458	references/pX458.fasta	
+62	pX459	references/pX459.fasta	
+74	pCW_6xOp_T10	references/pCW_6xOp_T10.fasta	sangers/116349_A04_016.ab1
+87	pCW_2xEnCAs12a	references/pCW_2xEnCAs12a.fasta	sangers/51A_010_FEE-148_CHZ_B02.ab1,sangers/51A_016_FEE-148_CRC_H02.ab1,sangers/51A_015_FEE-148_CRB_G02.ab1,sangers/51A_014_FEE-148_CRA_F02.ab1,sangers/51A_011_FEE-148_CQX_C02.ab1,sangers/51A_012_FEE-148_CQY_D02.ab1,sangers/51A_013_FEE-148_CQZ_E02.ab1,sangers/52C_001_FEE-153_CRT_A05.ab1,sangers/51B_012_FEE-150_CRM_H07.ab1,sangers/51A_009_FEE-148_CHX_A02.ab1
+3	pCW_6xOpCas12a	references/pCW_6xOpCas12a.fasta	sangers/51A_002_FEE-147_CHZ_B01.ab1,sangers/51A_008_FEE-147_CRC_H01.ab1,sangers/51A_007_FEE-147_CRB_G01.ab1
+15	pCW_Cas9_Puro	references/pCW_Cas9_Puro.fasta	
+27	PB_AsCpf1_Blast	references/PB_AsCpf1_Blast.fasta	sangers/59D_003_FEE-049_FE65_E08.ab1
+39	pY026_Blast	references/pY026_Blast.fasta	sangers/51C_011_FEE-045_AEM_A10.ab1
+51	PB_EF1_D7TG	references/PB_EF1_D7TG.fasta	sangers/51F_002_FEE-146_CDO_H05.ab1,sangers/51F_001_FEE-145_ADL_G05.ab1,sangers/51E_002_FEE-141_ACV_D08.ab1
+63	pRG232_6xOPCas12a	references/pRG232_6xOPCas12a.fasta	
+75	pRDA112_2xNLS_AsCas12a	references/pRDA112_2xNLS_AsCas12a.fasta	
+88	pRDA174_2xEnCas12a	references/pRDA174_2xEnCas12a.fasta	
+4	PB_CMV_Set2	references/PB_CMV_Set2.fasta	sangers/54I_004_FEE-088_CDP_D10.ab1,sangers/54I_007_FEE-091_AET_G10.ab1
+16	PB_AsCpf1_Puro	references/PB_AsCpf1_Puro.fasta	sangers/54I_018_FEE-102_CHZ_B12.ab1,sangers/54I_017_FEE-101_CHX_A12.ab1
+28	PB_TCF_guides	references/PB_TCF_guides.fasta	sangers/53D_003_FEE-003_BTA_C05.ab1
+40	PB_CMV_BC_noGuides	references/PB_CMV_BC_noGuides.fasta	
+52	PB_TCF_SiT_C1_BC1_A1	references/PB_TCF_SiT_C1_BC1_A1.fasta	sangers/51B_005_FEE-083_AHY_G12.ab1,sangers/51B_003_FEE-081_CDO_E12.ab1
+64	pCMV_dCpf1_eBE	references/pCMV_dCpf1_eBE.fasta	
+76	PB_TCF_GFPF_A1	references/PB_TCF_GFPF_A1.fasta	
+89	pGL3_RARE_Luc	references/pGL3_RARE_Luc.fasta	sangers/51A_006_FEE-070_CAP_F01.ab1
+5	pCAG_BsCas12a	references/pCAG_BsCas12a.fasta	
+17	pCI_152_pLenti_SiT_Cas12a	references/pCI_152_pLenti_SiT_Cas12a.fasta	sangers/51A_005_FEE-069_CDE_E01.ab1
+29	pMBP_LbCas12a	references/pMBP_LbCas12a.fasta	
+41	PB_BC1	references/PB_BC1.fasta	sangers/103079_H09_033.ab1
+53	PB_BC1_AsCpf1_Blast	references/PB_BC1_AsCpf1_Blast.fasta	sangers/51A_006_FEE-064_CDO_F02.ab1
+65	PB_TCF_Campa1-5_BC1_A1	references/PB_TCF_Campa1-5_BC1_A1.fasta	sangers/51C_006_FEE-040_BUI_D09.ab1
+77	PB_AsCpf1_Blast	references/PB_AsCpf1_Blast.fasta	sangers/59D_003_FEE-049_FE65_E08.ab1
+90	PB_CMV_Campa1-5_C1	references/PB_CMV_Campa1-5_C1.fasta	sangers/92650_G03_010.ab1
+6	lentiCas9_Blast	references/lentiCas9_Blast.fasta	
+18	pY026_CampaG1-5	references/pY026_CampaG1-5.fasta	sangers/52C_011_FEE-030_AAR_E06.ab1
+30	PB_TCF_GFPF_C1_A1	references/PB_TCF_GFPF_C1_A1.fasta	sangers/51A_002_FEE-011_BUI_B01.ab1
+42	PB_TCF_GFPF_C1	references/PB_TCF_GFPF_C1.fasta	sangers/51A_001_FEE-010_BUI_A01.ab1
+54	PB_TCF_GFPF	references/PB_TCF_GFPF.fasta	sangers/53D_003_FEE-003_BTA_C05.ab1,sangers/53D_002_FEE-002_BUI_B05.ab1,sangers/53D_001_FEE-001_BUU_A05.ab1
+66	PB_GFP_M1_C1	references/PB_GFP_M1_C1.fasta	
+78	PB_GFP_M1	references/PB_GFP_M1.fasta	sangers/95048_E02_004.ab1
+91	pY026_Blast	references/pY026_Blast.fasta	sangers/51C_011_FEE-045_AEM_A10.ab1
+7	PB_CMV_GFP	references/PB_CMV_GFP.fasta	
+19	PB_GFP	references/PB_GFP.fasta	sangers/92065_B10_039.ab1,sangers/91285_D05_021.ab1,sangers/91471_D07_029.ab1
+31	PB_TCF_GFP	references/PB_TCF_GFP.fasta	sangers/53D_003_FEE-003_BTA_C05.ab1,sangers/53D_002_FEE-002_BUI_B05.ab1,sangers/53D_001_FEE-001_BUU_A05.ab1
+43	PB_U6G_EF1_D7TG	references/PB_U6G_EF1_D7TG.fasta	sangers/52C_006_FEE-158_CDO_F05.ab1
+55	PB_CMV_D7TG	references/PB_CMV_D7TG.fasta	sangers/51G_006_FEE-139_BOS_G11.ab1
+67	lenti_CMV_D7TG	references/lenti_CMV_D7TG.fasta	sangers/51C_001_FEE-160_AHM_G02.ab1,sangers/51C_003_FEE-160_AAZ_A03.ab1,sangers/51C_004_FEE-160_BOT_B03.ab1,sangers/51C_005_FEE-160_ACV_C03.ab1
+79	pY026	references/pY026.fasta	sangers/52B_004_FEE-017_CMV-Forward_D09.ab1
+92	MD	references/MD.fasta	
+8	Lg	references/Lg.fasta	
+20	RSV	references/RSV.fasta	
+32	McK_4_4_1	references/McK_4_4_1.fasta	
+44	McK_4_4_3	references/McK_4_4_3.fasta	
+56	McK_4_4_4	references/McK_4_4_4.fasta	
+68	dInt_3	references/dInt_3.fasta	
+80	McK_4_4_1_rep	references/McK_4_4_1_rep.fasta	
+93	Add_114081_1	references/Add_114081_1.fasta	
+9	Add_114081_2	references/Add_114081_2.fasta	
+21	Add_114084_1	references/Add_114084_1.fasta	
+33	Add_114084_2	references/Add_114084_2.fasta	
+45	pX330_EGFR1_1	references/pX330_EGFR1_1.fasta	
+57	pX330_EGFR1_3	references/pX330_EGFR1_3.fasta	
+69	pX330_EGFR2_1	references/pX330_EGFR2_1.fasta	
+81	pX330_EGFR2_4	references/pX330_EGFR2_4.fasta	
+94	pX330_EGFR3	references/pX330_EGFR3.fasta	
+10	pX330_EGFR4_4	references/pX330_EGFR4_4.fasta	
+22	pX330_EGFR4_5	references/pX330_EGFR4_5.fasta	
+34	pX330_GAPDHg	references/pX330_GAPDHg.fasta	
+46	pX330_VIN1g	references/pX330_VIN1g.fasta	
+58	pX330_Vin2g	references/pX330_Vin2g.fasta	
+70	pX330_TUBA1Bg	references/pX330_TUBA1Bg.fasta	
+82	v8_3	references/v8_3.fasta	
+95	IntCas_xTen	references/IntCas_xTen.fasta	
+11	pCAG_GFP	references/pCAG_GFP.fasta	
+23	McK_4_4_3_rep	references/McK_4_4_3_rep.fasta	
+35	McK_4_4_4_rep	references/McK_4_4_4_rep.fasta	
+47	FUCCI	references/FUCCI.fasta	
+59	dInt_2	references/dInt_2.fasta	
+71	McK_5429	references/McK_5429.fasta	
+83	ABE	references/ABE.fasta	
+96	pUC19	references/pUC19.fasta	
+12	pGGA_GAPDH_HA1	references/pGGA_GAPDH_HA1.fasta	sangers/52B_001_FEE-014_FE22_A09.ab1
+24	pGGA_Campa1_5_C1	references/pGGA_Campa1_5_C1.fasta	sangers/52C_014_FEE-033_FE21_H06.ab1
+36	pGGA_Cassette1_col1	references/pGGA_Cassette1_col1.fasta	sangers/93590_B06_023.ab1
+48	McK_4_4_2_rep	references/McK_4_4_2_rep.fasta	
+60	PB_MerCreMer	references/PB_MerCreMer.fasta	
+72	PB_BSD_STOP_Cas12a	references/PB_BSD_STOP_Cas12a.fasta	
+84	PB_3xSTOP	references/PB_3xSTOP.fasta	
+97	pCMV_dCpf1_eBE	references/pCMV_dCpf1_eBE.fasta	
