@@ -89,9 +89,12 @@ if __name__ == "__main__":
     total_reads = count_fastq_gz_dir(args.results_dir + "/guppy/basecalling/pass/")
 
     for i,count in sample_ids:
-        guppy_coverage = count_fastq_gz_dir(args.results_dir + "/guppy_demultiplex/saved_data/barcode" + i )
-        filtered_coverage = count_fastqgz_reads_bases(args.results_dir + "/length_filter/" + i + "_length_filtered.fq.gz")
-        corrected_coverage = count_fastagz_reads_bases(args.results_dir + "canu/" + i + "_canu_correct/reads.correctedReads.fasta.gz")
+        try:
+            guppy_coverage = count_fastq_gz_dir(args.results_dir + "/guppy_demultiplex/saved_data/barcode" + i )
+            filtered_coverage = count_fastqgz_reads_bases(args.results_dir + "/length_filter/" + i + "_length_filtered.fq.gz")
+            corrected_coverage = count_fastagz_reads_bases(args.results_dir + "canu/" + i + "_canu_correct/reads.correctedReads.fasta.gz")
+            out.write(i + "\t" + "\t".join([str(x) for x in total_reads]) + "\t" + str(count) + "\t" + "\t".join([str(x) for x in guppy_coverage]) +
+            "\t" + "\t".join([str(x) for x in filtered_coverage]) + "\t" + "\t".join([str(x) for x in corrected_coverage]) + "\n")
 
-        out.write(i + "\t" + "\t".join([str(x) for x in total_reads]) + "\t" + str(count) + "\t" + "\t".join([str(x) for x in guppy_coverage]) +
-        "\t" + "\t".join([str(x) for x in filtered_coverage]) + "\t" + "\t".join([str(x) for x in corrected_coverage]) + "\n")
+        except:
+            print("Couldn't read files for " + str(i))
