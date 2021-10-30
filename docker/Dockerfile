@@ -146,3 +146,7 @@ RUN wget http://github.com/bbuchfink/diamond/releases/download/v2.0.12/diamond-l
 RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz 
 
 ENV PATH="/plasmidseq/diamond/:${PATH}"
+
+# add Flye to the docker container
+RUN git clone https://github.com/fenderglass/Flye /plasmidseq/flye/ && cd /plasmidseq/flye/ && make
+ENV PATH="/plasmidseq/flye/bin/:${PATH}"

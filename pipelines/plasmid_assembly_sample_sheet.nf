@@ -21,7 +21,8 @@ minimum_file_size = 5000
 minimum_fastq_size = 50000
 rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
 guppy_server_path = "/usr/bin/guppy_basecall_server"
-barcode_location = "/plasmidseq/barcodes/v2/"
+
+
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -84,7 +85,7 @@ process GuppyDemultiplex {
     guppy_barcoder \\
         --input_path ${basecalled} \\
         --save_path saved_data \\
-        --data_path ${barcode_location} \\
+        --data_path ${params.barcodes} \\
         --barcode_kits MY-CUSTOM-BARCODES \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
@@ -260,7 +261,7 @@ process CanuCorrect {
     tuple val(datasetID), file(to_correct) from filtered_reads_canu
     
     output:
-    tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_miniasm, canu_corrected_minimap, canu_corrected_convert
+    tuple val(datasetID), file("${datasetID}_canu_correct/reads.correctedReads.fasta.gz") into canu_corrected_miniasm, canu_corrected_flye, canu_corrected_minimap, canu_corrected_convert
     
     script:
 
@@ -278,8 +279,30 @@ process CanuCorrect {
 }
 
 /*
+ * Assemble corrected reads with Flye
+ */
+process Flye {
+    publishDir "$results_path/flye"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple val(datasetID), path(corrected_reads) from canu_corrected_flye
+
+    output:
+    tuple val(datasetID), path("${datasetID}_assembly/assembly.fasta") into flye_assembly
+    
+    script:
+    """
+    flye -g 10k --nano-corr \
+         ${corrected_reads} \
+         -o ${datasetID}_assembly \
+         --min-overlap 1000
+
+    """
+}
+
+/*
  * Assemble corrected reads with Miniasm 
- * TODO: install miniasm in a better way
  */
 process Miniasm {
     publishDir "$results_path/miniasm"
@@ -320,7 +343,7 @@ process ConvertGraph {
     val phased from read_phased.filter(){it.get(1).get(1).countLines() > 1} 
     
     output:
-    tuple val(str_name), path("${str_name}_contigs.fasta") into fasta_graph
+    tuple val(str_name), path("${str_name}_contigs.fasta") into miniasm_assembly
 
     script:
     str_name = phased.get(0).get(0)
@@ -343,6 +366,42 @@ process ConvertGraph {
         output.close()
     /$
 }
+
+
+/*
+ * We need to 'phase', or line-up, the corrected reads with their assembly results
+ */
+assembly_phase = flye_assembly.phase(miniasm_assembly, remainder: true)
+
+/*
+ * Check for any really poor quality assemblies
+ */
+process AssessAssemblyApproach {
+    errorStrategy 'finish'
+    publishDir "$results_path/assembly_choice"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    val phased_assemblies from assembly_phase
+    
+    output:
+    tuple val(str_name), path("${str_name}_${method}_assembly.fasta") into fasta_graph
+
+    script:
+
+    str_name = phased_assemblies.get(0).get(0)
+    myFlye = (phased_assemblies.get(0) == null) ? 'mydefaultvalue' : phased_assemblies.get(0).get(1)
+    myMiniasm = (phased_assemblies.get(1) == null) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
+    method = (phased_assemblies.get(1) == null) ? "flye" : "miniasm"
+    """
+    if [ -f "${myMiniasm}" ]; then
+        cp ${myMiniasm} ${str_name}_${method}_assembly.fasta
+    else 
+        cp ${myFlye} ${str_name}_${method}_assembly.fasta
+    fi
+    """
+}
+
 
 /*
  * phase the reads to the filtered assembly from the last step
@@ -372,7 +431,7 @@ process RaconPolish {
     """
     minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
 
-    racon -m 8 -x -6 -g -8 -w 500 -t 8 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon1.fasta
+    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon1.fasta
     """
 }
 
@@ -406,7 +465,7 @@ process RaconPolish2 {
     """
     minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
 
-    racon -m 8 -x -6 -g -8 -w 500 -t 8 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon2.fasta
+    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon2.fasta
     """
 }
 
@@ -439,7 +498,7 @@ process RaconPolish3 {
     """
     minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
 
-    racon -m 8 -x -6 -g -8 -w 500 -t 8 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon3.fasta
+    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon3.fasta
     """
 }
 
@@ -628,38 +687,6 @@ fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
 fast5_phased_base.into{fast5_phased; fast5_phased2}
 
 /*
- * Call base methylation using Megalodon with experimental rerio models
- */
-process MegalodonMethylationCalling {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-    beforeScript 'chmod o+rw .'
-
-    errorStrategy 'finish'
-    publishDir "$results_path/methylation/$str_name/"
-    maxForks 1
-
-    input:
-    val tuple_pack from fast5_phased
-    
-    output:
-    path("${str_name}_modified_bases.5mC.bed") into five_methyl
-    path("${str_name}_modified_bases.6mA.bed") into six_methyl
-
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    megalodon ${tuple_pack.get(1).get(1)} --outputs basecalls mappings mod_mappings mods \
-    --reference ${tuple_pack.get(0).get(1)} --mod-motif Z CCWGG 1 --mod-motif Y GATC 1 \
-    --devices 0 --processes 40 \
-    --guppy-server-path ${guppy_server_path} \
-    --guppy-config res_dna_r941_min_modbases-all-context_v001.cfg --guppy-params \"-d ${rerio_models}\"
-    cp megalodon_results/modified_bases.5mC.bed ${str_name}_modified_bases.5mC.bed
-    cp megalodon_results/modified_bases.6mA.bed ${str_name}_modified_bases.6mA.bed
-    """
-}
-
-/*
  * Call methylation using an older guppy model and modPhred
   */
 process OGMethylationCalling {
@@ -721,10 +748,12 @@ process AlignReads {
     tuple reads,reference from reference_and_reads_align // reads and reference 
 
     output:
+    tuple val(str_name), path("${str_name}_aligned.bam") into minimap_reads_unsorted
     tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam") into minimap_reads
     tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam.bai") into minimap_reads_bai
     path("${str_name}.fasta.dict") into sequence_dict
     path("${str_name}.fasta") into sequence_fasta
+    
     
     script:
     str_name = reads.get(0)
@@ -732,7 +761,8 @@ process AlignReads {
     """
     cp ${reference.get(1)} ${str_name}.fasta
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    minimap2 -ax map-ont ${reference.get(1)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_mapped_reads.bam
+    minimap2 -ax map-ont ${reference.get(1)} ${reads.get(1)} > ${str_name}_aligned.bam
+    samtools sort -o ${str_name}_sorted_mapped_reads.bam ${str_name}_aligned.bam
     samtools index ${str_name}_sorted_mapped_reads.bam
     """
 }
@@ -816,7 +846,7 @@ process AnnotatePlasmid {
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple name,reference from sample_copy
+    tuple name,reference from sample_copy.filter(){ it.get(1).countFasta() == 1}
     
     output:
     path("${name}_annotations") into annotation_dir
