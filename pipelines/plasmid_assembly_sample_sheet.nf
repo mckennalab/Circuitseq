@@ -286,7 +286,7 @@ process Flye {
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple val(datasetID), path(corrected_reads) from canu_corrected_flye
+    tuple val(datasetID), path(corrected_reads) from canu_corrected_flye.filter(){it.get(1).countLines() >= 20}
 
     output:
     tuple val(datasetID), path("${datasetID}_assembly/assembly.fasta") into flye_assembly
@@ -685,6 +685,39 @@ process Fast5Subset {
  */
 fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
 fast5_phased_base.into{fast5_phased; fast5_phased2}
+
+/*
+ * Call base methylation using Megalodon with experimental rerio models
+ */
+process MegalodonMethylationCalling {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+    beforeScript 'chmod o+rw .'
+
+    errorStrategy 'finish'
+    publishDir "$results_path/methylation/$str_name/"
+    maxForks 1
+
+    input:
+    val tuple_pack from fast5_phased
+    
+    output:
+    path("${str_name}_modified_bases.5mC.bed") into five_methyl
+    path("${str_name}_modified_bases.6mA.bed") into six_methyl
+
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    megalodon ${tuple_pack.get(1).get(1)} --outputs basecalls mappings mod_mappings mods \
+    --reference ${tuple_pack.get(0).get(1)} --mod-motif Z CCWGG 1 --mod-motif Y GATC 1 \
+    --devices 0 --processes 40 \
+    --guppy-server-path ${guppy_server_path} \
+    --guppy-config res_dna_r941_min_modbases-all-context_v001.cfg --guppy-params \"-d ${rerio_models}\"
+    cp megalodon_results/modified_bases.5mC.bed ${str_name}_modified_bases.5mC.bed
+    cp megalodon_results/modified_bases.6mA.bed ${str_name}_modified_bases.6mA.bed
+    """
+}
+
 
 /*
  * Call methylation using an older guppy model and modPhred
