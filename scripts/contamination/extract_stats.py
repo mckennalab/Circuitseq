@@ -30,8 +30,7 @@ def bam_to_alignment_stats(bam_file):
 output = open(args.output,"w")
 output.write("index\tcount\tvalid_count\ttotal_bases\tM\tI\tD\tN\tS\tH\tP\tE\tX\tB\n")
 
-for i in range(49,57):
-    stats = bam_to_alignment_stats(args.bamfile)
-    output.write(str(i) + "\t" + str(stats[1]) + "\t" + str(stats[2]) + "\t" + str(stats[3]) + "\t" + "\t".join([str(stats[0].get(x,0)) for x in range(0,10)]) + "\n")
+stats = bam_to_alignment_stats(args.bamfile)
+output.write(str(i) + "\t" + str(stats[1]) + "\t" + str(stats[2]) + "\t" + str(stats[3]) + "\t" + "\t".join([str(stats[0].get(x,0)) for x in range(0,10)]) + "\n")
 output.close()
     
