@@ -128,7 +128,7 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and filter out non-sample read collections, sending the results into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti_print; methylation_reads; guppy_alignment; guppy_length_align; guppy_porechop_align }
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti2; methylation_reads; guppy_alignment; guppy_length_align; guppy_porechop_align }
 
 raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }.phase(sample_table_pre_merge)
 
@@ -140,68 +140,28 @@ process AlignReadsPre {
     tuple reads,reference from raw_reads_for_alignment // reads and reference 
 
     output:
-    tuple val(str_name), path("${str_name}_sorted_premapped_reads.bam") into minimap_pre_reads
-    tuple val(str_name), path("${str_name}_sorted_premapped_reads.bam.bai") into minimap_pre_reads_bai
+    
+    tuple val(str_name), path("${str_name}_aligned.bam") into minimap_pre_reads_unsorted
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam") into minimap_pre_reads
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam.bai") into minimap_pre_reads_bai
     path("${str_name}.fasta.dict") into sequence_dict_pre
     path("${str_name}.fasta") into sequence_fasta_pre
-    
+
     script:
     str_name = reads.get(0)
 
     """
+    grep -v ">" ${reference.get(2)} > reference_no_header.fa
+    cat ${reference.get(2)} reference_no_header.fa > duplicate_ref.fa
     cp ${reference.get(2)} ${str_name}.fasta
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_premapped_reads.bam
-    samtools index ${str_name}_sorted_premapped_reads.bam
+    samtools dict duplicate_ref.fa > duplicate_ref.fa.dict
+    minimap2 -ax map-ont duplicate_ref.fa ${reads.get(1)} > ${str_name}_aligned.bam
+    samtools sort -o ${str_name}_sorted_mapped_reads.bam ${str_name}_aligned.bam
+    samtools index ${str_name}_sorted_mapped_reads.bam
     """
 }
 
-/*
- * Filter out excessively long reads (concatemers of full-length plasmids) that ruin later assemblies
- */
-process LengthFilter {
-    publishDir "$results_path/length_filter"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    tuple datasetID, path(fastq) from guppy_demulti.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
-
-    output:
-    tuple datasetID,"${datasetID}_length_filtered.fq.gz" into length_output, length_for_alignment
-    script:
-        
-    """
-    filter_by_length.py \
-    ${fastq} \
-    ${datasetID}_length_filtered.fq.gz
-    """
-}
-
-raw_reads_for_lf_alignment = length_for_alignment.phase(sample_table_pre_lf)
-
-process AlignReadsPostLengthFilter {
-    publishDir "$results_path/minimap_length_filter"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    tuple reads,reference from raw_reads_for_lf_alignment // reads and reference 
-
-    output:
-    tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
-    tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam.bai") into minimap_post_lf_reads_bai
-    path("${str_name}.fasta.dict") into sequence_dict_post_lf
-    path("${str_name}.fasta") into sequence_fasta_post_lf
-    
-    script:
-    str_name = reads.get(0)
-
-    """
-    cp ${reference.get(2)} ${str_name}.fasta
-    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
-    samtools index ${str_name}_sorted_post_lf_reads.bam
-    """
-}
 
 /*
  * Chop off adapter sequences
@@ -211,9 +171,9 @@ process Porechop {
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple val(datasetID), file(fastq) from length_output
+    tuple datasetID, path(fastq) from guppy_demulti.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }
     output:
-    tuple datasetID,"${datasetID}_porechop.fq.gz" into porechop_output, porechop_output_for_minimap
+    tuple datasetID,"${datasetID}_porechop.fq.gz" into porechop_output, porechop_output_for_minimap, length_for_alignment
     script:
         
     """
@@ -223,6 +183,34 @@ process Porechop {
         --discard_middle --middle_threshold 80
     """
 }
+raw_reads_for_lf_alignment = length_for_alignment.phase(sample_table_pre_lf)
+
+
+
+process AlignReadsPostLengthFilter {
+    publishDir "$results_path/minimap_length_filter"
+        beforeScript 'chmod o+rw .'
+
+    input:
+        tuple reads,reference from raw_reads_for_lf_alignment // reads and reference
+
+    output:
+        tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
+	    tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam.bai") into minimap_post_lf_reads_bai
+	        path("${str_name}.fasta.dict") into sequence_dict_post_lf
+		    path("${str_name}.fasta") into sequence_fasta_post_lf
+
+    script:
+        str_name = reads.get(0)
+
+    """
+    cp ${reference.get(2)} ${str_name}.fasta
+    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
+    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
+    samtools index ${str_name}_sorted_post_lf_reads.bam
+    """
+    }
+
 
 /*
  * Filter reads by quality
@@ -236,12 +224,12 @@ process Porechop {
     path summary from basecalling_summary_file
     
     output:
-    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap2, filtered_reads_minimap3
+    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap
 
     script:
         
     """
-    gunzip -c ${tofilter} | NanoFilt --quality 10 --length 2500 --summary ${summary} | gzip > ${datasetID}_filtered.fq.gz
+    gunzip -c ${tofilter} | NanoFilt --quality 10 --length 500 --summary ${summary} | gzip > ${datasetID}_filtered.fq.gz
     """
 }
 
@@ -271,6 +259,7 @@ process CanuCorrect {
     canu -correct \
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
+     corOutCoverage=60 \
      stopOnLowCoverage=2 minInputCoverage=2 \
      -nanopore ${to_correct} 
     
@@ -642,7 +631,7 @@ process Rotated {
     
     
     output:
-    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_eval, rotated_reference_methyl
+    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_minimap2, rotated_reference_eval, rotated_reference_methyl
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -774,7 +763,7 @@ reference_and_reads = porechop_output_for_minimap.phase(rotated_reference_minima
 reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
 
 process AlignReads {
-    publishDir "$results_path/minimap_final"
+    publishDir "$results_path/minimap_final_porechop"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -792,13 +781,72 @@ process AlignReads {
     str_name = reads.get(0)
 
     """
+    grep -v ">" ${reference.get(1)} > reference_no_header.fa
+    cat ${reference.get(1)} reference_no_header.fa > duplicate_ref.fa
     cp ${reference.get(1)} ${str_name}.fasta
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    minimap2 -ax map-ont ${reference.get(1)} ${reads.get(1)} > ${str_name}_aligned.bam
+    samtools dict duplicate_ref.fa > duplicate_ref.fa.dict
+    minimap2 -ax map-ont duplicate_ref.fa ${reads.get(1)} > ${str_name}_aligned.bam
     samtools sort -o ${str_name}_sorted_mapped_reads.bam ${str_name}_aligned.bam
     samtools index ${str_name}_sorted_mapped_reads.bam
     """
 }
+
+reference_and_reads_nanofilt = filtered_reads_minimap.phase(rotated_reference_minimap2)
+reference_and_reads_nanofilt.into{reference_and_reads_align_nanofilt}
+
+process AlignReadsNanofilter {
+    publishDir "$results_path/minimap_final_nanofilter"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple reads,reference from reference_and_reads_align_nanofilt // reads and reference 
+
+    output:
+    tuple val(str_name), path("${str_name}_aligned.bam") into minimap_reads_unsorted_nanofilter
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam") into minimap_reads_nanofilter
+    tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam.bai") into minimap_reads_bai_nanofilter
+    path("${str_name}.fasta.dict") into sequence_dict_nanofilter
+    path("${str_name}.fasta") into sequence_fasta_nanofilter
+    
+    
+    script:
+    str_name = reads.get(0)
+
+    """
+    grep -v ">" ${reference.get(1)} > reference_no_header.fa
+    cat ${reference.get(1)} reference_no_header.fa > duplicate_ref.fa
+    cp ${reference.get(1)} ${str_name}.fasta
+    samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
+    samtools dict duplicate_ref.fa > duplicate_ref.fa.dict
+    minimap2 -ax map-ont duplicate_ref.fa ${reads.get(1)} > ${str_name}_aligned.bam
+    samtools sort -o ${str_name}_sorted_mapped_reads.bam ${str_name}_aligned.bam
+    samtools index ${str_name}_sorted_mapped_reads.bam
+    """
+}
+
+process AssessNanofiltResults {
+    publishDir "$results_path/minimap_final_nanofilter_alignment_scores"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    tuple sample, aligned_bam from minimap_reads_unsorted_nanofilter
+
+    output:
+    tuple sample, "${sample}_alignment.txt" into nanofilt_alignment_assessment
+    
+    script:
+    str_name = reads.get(0)
+
+    """
+    python /plasmidseq/scripts/contamination/extract_stats.py \
+    --bamfile ${aligned_bam} \
+    --output ${sample}_alignment.txt
+    """
+}
+
+
+
 /*
  * Create an alignment of the reference and the known map
  */
