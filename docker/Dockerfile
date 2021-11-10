@@ -150,3 +150,5 @@ ENV PATH="/plasmidseq/diamond/:${PATH}"
 # add Flye to the docker container
 RUN git clone https://github.com/fenderglass/Flye /plasmidseq/flye/ && cd /plasmidseq/flye/ && make
 ENV PATH="/plasmidseq/flye/bin/:${PATH}"
+
+RUN pip install pysam
