@@ -5,6 +5,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Extract alignment statistics')
 parser.add_argument('--bamfile', help='the bam file to load',required=True)
 parser.add_argument('--output', help='our output stats file',required=True)
+parser.add_argument('--sample', help='our sample',required=True)
 
 args = parser.parse_args()
 
@@ -31,6 +32,6 @@ output = open(args.output,"w")
 output.write("index\tcount\tvalid_count\ttotal_bases\tM\tI\tD\tN\tS\tH\tP\tE\tX\tB\n")
 
 stats = bam_to_alignment_stats(args.bamfile)
-output.write(str(i) + "\t" + str(stats[1]) + "\t" + str(stats[2]) + "\t" + str(stats[3]) + "\t" + "\t".join([str(stats[0].get(x,0)) for x in range(0,10)]) + "\n")
+output.write(args.sample + "\t" + str(stats[1]) + "\t" + str(stats[2]) + "\t" + str(stats[3]) + "\t" + "\t".join([str(stats[0].get(x,0)) for x in range(0,10)]) + "\n")
 output.close()
     
