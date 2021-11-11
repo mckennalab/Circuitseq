@@ -7,7 +7,17 @@ To run CircuitSeq:
 2) Save the plasmid reference sequences in a subdirectory, these should be in the fasta format. This sequence is used for assembly quality assessment, the assembly will be made regardless of whether a reference sequence exists. If you do not have sequences for all plasmids we recommend making a dummy fasta that can be linked to each plasmid to avoid downstream quality assessment steps from interrupting the pipeline. 
 3) Prepare a samplesheet, this has to be a tab-delimited file with the following headers: Position, SampleID, Reference. These correspond to the position on the barcode plate (i.e. the barcode ID), the sampleID which can be a plasmid name or a alphanumeric code, and the location where the reference file, as a fasta, is located. 
 4) Modify the corresponding run file found under the pipeline directory (run_941_sample_sheet.sh for R9.4, run_103_sample_sheet.sh for R10.3). Items that need to be changed include: the location of the sample sheet, and the location of the fast5 directory. 
-5) Install Nextflow 
+5) Install [Nextflow](https://www.nextflow.io/)
+```
+#Check that you have hava 8 or later:
+java -version 
+
+#download nextflow
+curl -s https://get.nextflow.io | bash 
+
+#test that it installed correctly
+./nextflow run hello 
+```
 
 
 
