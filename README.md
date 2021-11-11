@@ -1,4 +1,4 @@
-# PlasmidSeq
+# CircuitSeq
 
 CircuitSeq is a tool to assemble and analyze plasmids from Nanopore ONT long-read sequencing. This is achieved by first basecalling the raw fast5 data and demultiplexing the sample barcodes using Guppy, filtering out chimeric reads and short reads (with Porechop and NanoFilt), correcting with the reads with Canu, assembling with miniasm, and then subsequent rounds of polishing with Racon, Medaka, and NextPolish (***add appropriate links to each tool**). For information about sample preparation please refer to our preprint (link). 
 
