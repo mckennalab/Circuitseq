@@ -1,27 +1,15 @@
 #!/usr/bin/env nextflow
 
 /*
-
 ========================================================================================
                          mckenna_lab/plasmid_seq
 ========================================================================================
- Process plasmids sequenced on Oxford Nanopore into assembled maps of each sequence
+ Process sequenced plasmids on Oxford Nanopore into assembled maps of each sequence
 ----------------------------------------------------------------------------------------
 */
 
 input_fastq5_path  = Channel.fromPath(params.fast5).first()
-input_tn5ref      = Channel.fromPath(params.tn5ref)
-input_tn5proj_base = Channel.fromPath("${params.tn5ref}.*")
-
-
-// global variables
-input_bc_mat     = Channel.fromPath(params.bcmat)
-results_path = "results"
-minimum_file_size = 5000
-minimum_fastq_size = 50000
-rerio_models = "/analysis/2021_08_26_PlasmidSeq_paper/rerio/basecall_models/"
-guppy_server_path = "/usr/bin/guppy_basecall_server"
-
+results_path       = "results"
 
 /*
  * Read in the sample table and convert entries into a channel of sample information 
@@ -32,8 +20,31 @@ Channel.fromPath( params.samplesheet )
         .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
         .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
 
+// check if they've asked for methylation calling, if not, set it to false
+if (!binding.hasVariable('params.methylation_calling')) {
+    params.methylation_calling = false
+}
+log.info "Methylation calling: " + params.methylation_calling
+
+// check if they've asked for QC output, if not, set it to false
+if (!binding.hasVariable('params.quality_control_processes')) {
+    params.quality_control_processes = false
+}
+log.info "Quality control output: " + params.quality_control_processes
+
+// check if they've asked to annotate the resulting plasmid maps
+if (!binding.hasVariable('params.annotate_plasmid')) {
+    params.annotate_plasmid = false
+}
+log.info "Annotate plasmid output: " + params.annotate_plasmid
+println "Project : $workflow.projectDir"
+println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
+println "Cmd line: $workflow.commandLine"
+println "Manifest's pipeline version: $workflow.manifest.version"
+
+
 /*
- * Initial basecalling of all reads using Guppy
+ * Initial basecalling of all reads using Guppy -- this is the most computationally costly step
  */
 process GuppyBaseCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
@@ -98,7 +109,7 @@ process GuppyDemultiplex {
 }
 
 /*
- * Run the pyco quality control step on all reads concurrently 
+ * Run the pyco quality control step on the whole collection of reads from guppy
  */
 process pycoQC {
     publishDir "$results_path/pycoQC"
@@ -107,7 +118,6 @@ process pycoQC {
     input:
     path basecalling_summary from basecalling_summary_for_pyco
     path barcode_summary from barcoding_split_summary
-
 
     output:
     path "pycoQC.html" into pycoQC_HTML
@@ -121,23 +131,31 @@ process pycoQC {
         --summary_file $basecalling_summary \\
         --barcode_file $barcode_summary \\
         --html_outfile pycoQC.html
-        
     """
 }
 
 /*
- * Take the channel of sample-split reads and filter out non-sample read collections, sending the results into multiple downstream channels
+ * Take the channel of sample-split reads and send them into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ guppy_demulti; guppy_demulti2; methylation_reads; guppy_alignment; guppy_length_align; guppy_porechop_align }
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ 
+    guppy_demulti; 
+    methylation_reads; 
+    guppy_alignment; 
+}
 
+// extract the well number as an ID -- this must current result in a 2 digit code from 00 to 99
 raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }.phase(sample_table_pre_merge)
 
+// align the reads to the known reference for downstream QC 
 process AlignReadsPre {
     publishDir "$results_path/minimap_initial"
     beforeScript 'chmod o+rw .'
 
     input:
     tuple reads,reference from raw_reads_for_alignment // reads and reference 
+
+    when:
+    params.quality_control_processes
 
     output:
     
@@ -191,6 +209,9 @@ process AlignReadsPostLengthFilter {
     publishDir "$results_path/minimap_length_filter"
         beforeScript 'chmod o+rw .'
 
+    when:
+    params.quality_control_processes
+
     input:
         tuple reads,reference from raw_reads_for_lf_alignment // reads and reference
 
@@ -238,8 +259,6 @@ filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; 
 
 /*
  * We use Canu to make high-quality concensus sequences from the filtered reads
- * TODO: fix path to canu
- * TODO: Canu really struggles with low read counts, right now we're filtering out anything with a file size less than 100Kb
 */
 process CanuCorrect {
     publishDir "$results_path/canu"
@@ -262,8 +281,6 @@ process CanuCorrect {
      corOutCoverage=60 \
      stopOnLowCoverage=2 minInputCoverage=2 \
      -nanopore ${to_correct} 
-    
-    
     """
 }
 
@@ -629,7 +646,6 @@ process Rotated {
     input:
     val tuple_pack from read_phased_lcp
     
-    
     output:
     set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_minimap2, rotated_reference_eval, rotated_reference_methyl
     
@@ -654,6 +670,9 @@ process Fast5Subset {
     publishDir "$results_path/methylation"
     beforeScript 'chmod o+rw .'
 
+    when:
+    params.methylation_calling
+
     input:
     path input_path from input_fastq5_path
     set str_name,reads from methylation_reads_samples
@@ -665,7 +684,6 @@ process Fast5Subset {
     """
     zcat ${reads} | awk '{if(NR%4==1) print \$1}' | sed -e "s/^@//" | cat > read_ids.txt
     fast5_subset --input ${input_path} --save_path ${str_name}_fast5_subset --read_id_list read_ids.txt --filename_base subset --batch_size 10000 --recursive
-    
     """
 }
 
@@ -673,53 +691,23 @@ process Fast5Subset {
  * Create two read piles for each of the methylation types
  */
 fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
-fast5_phased_base.into{fast5_phased; fast5_phased2}
-
-/*
- * Call base methylation using Megalodon with experimental rerio models
- */
-process MegalodonMethylationCalling {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-    beforeScript 'chmod o+rw .'
-
-    errorStrategy 'finish'
-    publishDir "$results_path/methylation/$str_name/"
-    maxForks 1
-
-    input:
-    val tuple_pack from fast5_phased
-    
-    output:
-    path("${str_name}_modified_bases.5mC.bed") into five_methyl
-    path("${str_name}_modified_bases.6mA.bed") into six_methyl
-
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    megalodon ${tuple_pack.get(1).get(1)} --outputs basecalls mappings mod_mappings mods \
-    --reference ${tuple_pack.get(0).get(1)} --mod-motif Z CCWGG 1 --mod-motif Y GATC 1 \
-    --devices 0 --processes 40 \
-    --guppy-server-path ${guppy_server_path} \
-    --guppy-config res_dna_r941_min_modbases-all-context_v001.cfg --guppy-params \"-d ${rerio_models}\"
-    cp megalodon_results/modified_bases.5mC.bed ${str_name}_modified_bases.5mC.bed
-    cp megalodon_results/modified_bases.6mA.bed ${str_name}_modified_bases.6mA.bed
-    """
-}
-
+fast5_phased_base.set{fast5_phased}
 
 /*
  * Call methylation using an older guppy model and modPhred
-  */
+ */
 process OGMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
     beforeScript 'chmod o+rw .'
-
     errorStrategy 'finish'
     publishDir "$results_path/methylation"
     maxForks 1
+
+    when:
+    params.methylation_calling
+
     input:
-    val tuple_pack from fast5_phased2
+    val tuple_pack from fast5_phased
     
     output:
     path("modPhred/${str_name}") into five_methyl2
@@ -727,13 +715,12 @@ process OGMethylationCalling {
     str_name = tuple_pack.get(0).get(0)
     """
     /og_methyl/ont-guppy/bin/guppy_basecaller -x cuda:0 -c dna_r9.4.1_450bps_modbases_dam-dcm-cpg_hac.cfg --compress_fastq --fast5_out --disable_pings -ri ${tuple_pack.get(1).get(1)} -s basecalled_mod
-    /og_methyl/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace
+    /og_methyl/modPhred/run -f ${tuple_pack.get(0).get(1)} -o modPhred/${str_name} -i basecalled_mod/workspace --minModFreq 0.0 
     """
 }
 /*
  * Create a reference file with the name from the sample table
  */
-
 process ReferenceCopy {
     errorStrategy 'finish'
     publishDir "$results_path/reference_copy"
@@ -741,7 +728,6 @@ process ReferenceCopy {
 
     input:
     val tuple_pack from nextpolish_consensus2_for_copy
-
     
     output:
     set str_name, path("${sample_ID}_${str_name}_identity.fasta") into sample_copy
@@ -761,6 +747,10 @@ process ReferenceCopy {
  */
 reference_and_reads = porechop_output_for_minimap.phase(rotated_reference_minimap)
 reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
+
+/*
+ * Align the original reads back to the resulting assembled reference 
+ */
 
 process AlignReads {
     publishDir "$results_path/minimap_final_porechop"
@@ -793,11 +783,17 @@ process AlignReads {
 }
 
 reference_and_reads_nanofilt = filtered_reads_minimap.phase(rotated_reference_minimap2)
-reference_and_reads_nanofilt.into{reference_and_reads_align_nanofilt}
+reference_and_reads_nanofilt.set{reference_and_reads_align_nanofilt}
 
+/*
+ * QC process to check out how reads align after the nanofilter step
+*/
 process AlignReadsNanofilter {
     publishDir "$results_path/minimap_final_nanofilter"
     beforeScript 'chmod o+rw .'
+    
+    when:
+    params.quality_control_processes
 
     input:
     tuple reads,reference from reference_and_reads_align_nanofilt // reads and reference 
@@ -825,30 +821,36 @@ process AlignReadsNanofilter {
     """
 }
 
+/*
+ * Run a script that checks how well our aligned BAM files do on a number of contamination metrics 
+*/
 process AssessNanofiltResults {
     publishDir "$results_path/minimap_final_nanofilter_alignment_scores"
     beforeScript 'chmod o+rw .'
+    
+    when:
+    params.quality_control_processes
 
     input:
     tuple sample, aligned_bam from minimap_reads_unsorted_nanofilter
 
     output:
-    tuple sample, "${sample}_alignment.txt" into nanofilt_alignment_assessment
+    tuple sample, "${sample}_bam_alignment.txt" into nanofilt_alignment_assessment
     
     script:
-    str_name = reads.get(0)
 
     """
     python /plasmidseq/scripts/contamination/extract_stats.py \
     --bamfile ${aligned_bam} \
-    --output ${sample}_alignment.txt
+    --output ${sample}_bam_alignment.txt \
+    --sample ${sample}
     """
 }
 
 
 
 /*
- * Create an alignment of the reference and the known map
+ * Create an alignment of the reference and the known (provided) plasmid map
  */
 
 read_phased_for_alignment = rotated_reference_align.phase(sample_table_assessment2)
@@ -857,7 +859,10 @@ process AlignReferences {
     errorStrategy 'finish'
     publishDir "$results_path/comparison_basic"
     beforeScript 'chmod o+rw .'
-
+    
+    when:
+    params.quality_control_processes
+    
     input:
     val tuple_pack from read_phased_for_alignment
     
@@ -883,6 +888,9 @@ process PlasmidComparison {
     publishDir "$results_path/plasmid_comp"
     beforeScript 'chmod o+rw .'
 
+    when:
+    params.quality_control_processes
+
     input:
     tuple sample, assembled, ref from rotated_reference_eval
     
@@ -903,6 +911,9 @@ process PlasmidComparisonCollection {
     errorStrategy 'finish'
     publishDir "$results_path/plasmid_stat"
     beforeScript 'chmod o+rw .'
+    
+    when:
+    params.quality_control_processes
 
     input:
     file stats from plasmid_comp.toList()
@@ -925,6 +936,9 @@ process AnnotatePlasmid {
     errorStrategy 'finish'
     publishDir "$results_path/annotated"
     beforeScript 'chmod o+rw .'
+    
+    when:
+    params.annotate_plasmid
 
     input:
     tuple name,reference from sample_copy.filter(){ it.get(1).countFasta() == 1}
