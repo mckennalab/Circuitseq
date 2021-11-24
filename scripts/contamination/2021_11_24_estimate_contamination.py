@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description='Estimate contamination rates for a
 parser.add_argument('--bamfile', help='the aligned reads bam file',required=True)
 parser.add_argument('--reference', help='our reference file',required=True)
 parser.add_argument('--sample', help='the sample name',required=True)
+parser.add_argument('--plasmid_mix_in_rate', help='the estimated rate of plasmid mix-in',required=True,type=float)
 parser.add_argument('--sample_estimate', help='the sample contamination, as a single line file',required=True)
 parser.add_argument('--sample_range', help='the sample contamination estimations over the whole spectrum',required=True)
 
@@ -111,7 +112,7 @@ def aligned_reference_read(reference,read,start,cigar_tuples,quals,debug=False):
 
 # aligned_reference_read("AAAAAAA","AAAT",0,[(0,2),(2,3),(0,2)])
 
-our_match_inflation = .12
+our_match_inflation = args.plasmid_mix_in_rate
 precomputed_error_rate_contamination_scores = {}
 for i in range(0,100):
     for j in range(0,1000):
