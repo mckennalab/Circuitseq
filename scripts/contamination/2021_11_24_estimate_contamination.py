@@ -3,6 +3,7 @@ import argparse
 import math
 import numpy as np
 import argparse
+import cProfile
 
 
 parser = argparse.ArgumentParser(description='Estimate contamination rates for a plasmid')
@@ -110,22 +111,25 @@ def aligned_reference_read(reference,read,start,cigar_tuples,quals,debug=False):
 
 # aligned_reference_read("AAAAAAA","AAAT",0,[(0,2),(2,3),(0,2)])
 
-def match_score(bases,error_rates,matches,contamination_score_input,match_inflation=.12):
-    contamination_score = contamination_score_input
-    if contamination_score == 1:
-        contamination_score = 0.9999999999999999
-    elif contamination_score == 0:
-        contamination_score = 0.0000000000000001
-    calc = 0
-    for i in range(0,len(bases)):
-        if matches[i]:
-            #if i == 0:
-            #    print(error_rates[i])
-            #    raise NameError("A")
-            calc += math.log( (1.0 - contamination_score) * (1.0 - error_rates[i]) + (contamination_score * ((1/4) + match_inflation)))
-        else:
-            calc += math.log( ((1.0 - contamination_score) * error_rates[i]) + (contamination_score * ((3/4) - match_inflation)))
-    return(calc)
+our_match_inflation = .12
+precomputed_error_rate_contamination_scores = {}
+for i in range(0,100):
+    for j in range(0,1000):
+        for k in [True,False]:
+            error_rate = math.pow(10,-1.0 * (i/10))
+            contamination_score = j / 1000
+            if j == 1000:
+                contamination_score = 0.9999999999999999
+            elif j == 0:
+                contamination_score = 0.0000000000000001
+            if k:
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( (1.0 - contamination_score) * (1.0 - error_rate) + (contamination_score * ((1/4) + our_match_inflation)))
+            else:
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * ((3/4) - our_match_inflation)))
+
+def match_score(bases,error_rates,matches,contamination_score_input,match_inflation=.12):    
+    return(np.sum([precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+
 
 def update_scores(scores, score_bins, bases,quals,matches):
     # convert quality scores
@@ -136,7 +140,7 @@ def update_scores(scores, score_bins, bases,quals,matches):
     
 def bam_to_alignment_stats(reference, bam_file,bins=1000):
 
-    log_contamination_bins = [0 for x in range(0,bins)]
+    log_contamination_bins = np.zeros(bins) # [0 for x in range(0,bins)]
     contamination_representations = [x/bins for x in range(0,bins)]
     
     print(bam_file)
@@ -152,6 +156,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
         total_reads += 1
         if total_reads % 100 == 0:
             print("Processed = " + str(total_reads) + " unprocessed = " + str(unprocessed))
+            break
         sequence  = read.query_sequence
         qualities = read.query_qualities
         
@@ -181,14 +186,15 @@ for line in plasmid_ref:
     ref += line.strip().upper()
 
 bin_count = 1000
+# cProfile.run('bins = bam_to_alignment_stats(ref,args.bamfile,bin_count)')
 bins = bam_to_alignment_stats(ref,args.bamfile,bin_count)
 
 single_line = open(args.sample_estimate,"w")
-single_line.write(args.sample + "\t" + str(np.argmax(np.array(bins[0]))) + "\n")
+single_line.write(args.sample + "\t" + str(np.argmax(bins[0])) + "\n")
 single_line.close()
 
 
-raw_probs = [math.exp(x - np.max(np.array(bins[0]))) for x in bins[0]]
+raw_probs = [math.exp(x - np.max(bins[0])) for x in bins[0]]
 probs = [x/sum(raw_probs) for x in raw_probs]
 
 all_lines = open(args.sample_range,"w")
