@@ -158,7 +158,6 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
         total_reads += 1
         if total_reads % 100 == 0:
             print("Processed = " + str(total_reads) + " unprocessed = " + str(unprocessed))
-            break
         sequence  = read.query_sequence
         qualities = read.query_qualities
         
