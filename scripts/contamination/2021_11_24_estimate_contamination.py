@@ -127,9 +127,10 @@ for i in range(0,100):
                 precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( (1.0 - contamination_score) * (1.0 - error_rate) + (contamination_score * ((1/4) + our_match_inflation)))
             else:
                 precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * ((3/4) - our_match_inflation)))
-
+           
+        
 def match_score(bases,error_rates,matches,contamination_score_input,match_inflation=.12):    
-    return(np.sum([precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+    return(np.sum([math.log(1.0/float(len(matches))) + precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
 
 
 def update_scores(scores, score_bins, bases,quals,matches):
@@ -157,7 +158,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
         total_reads += 1
         if total_reads % 100 == 0:
             print("Processed = " + str(total_reads) + " unprocessed = " + str(unprocessed))
-            # break
+            break
         sequence  = read.query_sequence
         qualities = read.query_qualities
         
