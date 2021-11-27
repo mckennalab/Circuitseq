@@ -129,16 +129,16 @@ for i in range(0,100):
                 precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * ((3/4) - our_match_inflation)))
            
         
-def match_score(bases,error_rates,matches,contamination_score_input,match_inflation=.12):    
-    return(np.sum([math.log(1.0/float(len(matches))) + precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+def match_score(bases,error_rates,matches,contamination_score_input,norm):    
+    return(np.sum([math.log(norm/float(len(matches))) + precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
 
 
-def update_scores(scores, score_bins, bases,quals,matches):
+def update_scores(scores, score_bins, bases,quals,matches,norm):
     # convert quality scores
     # [print(str(q) + " " + str(math.pow(10,-1.0 * (q/10)))) for q in quals]
     error_rates = [math.pow(10,-1.0 * (q/10)) for q in quals]
     for i in range(0,len(scores)):
-        scores[i] += match_score(bases,error_rates,matches,score_bins[i])
+        scores[i] += match_score(bases,error_rates,matches,score_bins[i],norm)
     
 def bam_to_alignment_stats(reference, bam_file,bins=1000):
 
@@ -147,6 +147,18 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
     
     print(bam_file)
     
+    samfile_pre = pysam.AlignmentFile(bam_file, "rb")
+    lens = []
+    for read in samfile_pre.fetch():
+        
+        sequence  = read.query_sequence
+        qualities = read.query_qualities
+        
+        if sequence != None and not read.is_secondary:
+            lens.append(len(sequence))
+    
+    norm = sum(lens)/float(len(lens))
+    print("average read length " + str(norm))
     samfile = pysam.AlignmentFile(bam_file, "rb")
     
     total_reads = 0
@@ -156,8 +168,9 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
     
     for read in samfile.fetch():
         total_reads += 1
-        if total_reads % 100 == 0:
+        if total_reads % 1000 == 0:
             print("Processed = " + str(total_reads) + " unprocessed = " + str(unprocessed))
+            break
         sequence  = read.query_sequence
         qualities = read.query_qualities
         
@@ -167,14 +180,14 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
             aligned_set = [0 for x in read.query_sequence]
             matches     += sum(aligned_set)
             total += len(aligned_set)
-            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set)
+            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
         else:
             position    = read.get_reference_positions()[0]
             cigar       = read.cigartuples
             aligned_set = aligned_reference_read(reference,sequence,position,cigar,qualities)
             matches     += sum(aligned_set)
             total += len(aligned_set)
-            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set)
+            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
     
     print(matches)
     print(total)
