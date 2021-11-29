@@ -130,7 +130,7 @@ for i in range(0,100):
            
         
 def match_score(bases,error_rates,matches,contamination_score_input,norm):    
-    return(np.sum([math.log(norm/float(len(matches))) + precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+    return(np.sum([math.log(norm/float(len(matches))) * precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
 
 
 def update_scores(scores, score_bins, bases,quals,matches,norm):
