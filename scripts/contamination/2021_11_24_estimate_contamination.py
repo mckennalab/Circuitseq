@@ -130,7 +130,7 @@ for i in range(0,100):
            
         
 def match_score(bases,error_rates,matches,contamination_score_input,norm):    
-    return(np.sum([math.log(norm/float(len(matches))) * precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+    return(np.sum([norm + precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
 
 
 def update_scores(scores, score_bins, bases,quals,matches,norm):
@@ -140,7 +140,7 @@ def update_scores(scores, score_bins, bases,quals,matches,norm):
     for i in range(0,len(scores)):
         scores[i] += match_score(bases,error_rates,matches,score_bins[i],norm)
     
-def bam_to_alignment_stats(reference, bam_file,bins=1000):
+def bam_to_alignment_stats(reference, bam_file,bins=100):
 
     log_contamination_bins = np.zeros(bins) # [0 for x in range(0,bins)]
     contamination_representations = [x/bins for x in range(0,bins)]
@@ -157,8 +157,9 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
         if sequence != None and not read.is_secondary:
             lens.append(len(sequence))
     
-    norm = sum(lens)/float(len(lens))
-    print("average read length " + str(norm))
+    max_length = max(lens)
+    min_length = min(lens)
+    print("min read length " + str(min_length) + " min read length " + str(max_length))
     samfile = pysam.AlignmentFile(bam_file, "rb")
     
     total_reads = 0
@@ -168,7 +169,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
     
     for read in samfile.fetch():
         total_reads += 1
-        if total_reads % 1000 == 0:
+        if total_reads % 100 == 0:
             print("Processed = " + str(total_reads) + " unprocessed = " + str(unprocessed))
             # break
         sequence  = read.query_sequence
@@ -180,6 +181,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
             aligned_set = [0 for x in read.query_sequence]
             matches     += sum(aligned_set)
             total += len(aligned_set)
+            norm = math.log(max(0.0001,1.0 - (len(sequence) - min_length)/(max_length)))
             update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
         else:
             position    = read.get_reference_positions()[0]
@@ -187,6 +189,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=1000):
             aligned_set = aligned_reference_read(reference,sequence,position,cigar,qualities)
             matches     += sum(aligned_set)
             total += len(aligned_set)
+            norm = math.log(max(0.0001,1.0 - (len(sequence) - min_length)/(max_length)))
             update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
     
     print(matches)
@@ -199,7 +202,7 @@ header = plasmid_ref.readline()
 for line in plasmid_ref:
     ref += line.strip().upper()
 
-bin_count = 1000
+bin_count = 100
 # cProfile.run('bins = bam_to_alignment_stats(ref,args.bamfile,bin_count)')
 bins = bam_to_alignment_stats(ref,args.bamfile,bin_count)
 
