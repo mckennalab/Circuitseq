@@ -134,8 +134,10 @@ def match_score(bases,error_rates,matches,contamination_score_input,aligned):
 
 
 def update_scores(scores, score_bins, bases,quals,matches,norm):
-    # convert quality scores
-    # [print(str(q) + " " + str(math.pow(10,-1.0 * (q/10)))) for q in quals]
+    subsampled_positions = random.sample(range(len(bases)), 500)
+    bases = [bases[i] for i in subsampled_positions]
+    quals =[quals[i] for i in subsampled_positions]
+    matches = [matches[i] for i in subsampled_positions]
     error_rates = [math.pow(10,-1.0 * (q/10)) for q in quals]
     for i in range(0,len(scores)):
         scores[i] += match_score(bases,error_rates,matches,score_bins[i],norm)
