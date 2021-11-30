@@ -4,7 +4,7 @@ import math
 import numpy as np
 import argparse
 import cProfile
-
+import random
 
 parser = argparse.ArgumentParser(description='Estimate contamination rates for a plasmid')
 parser.add_argument('--bamfile', help='the aligned reads bam file',required=True)
@@ -124,12 +124,12 @@ for i in range(0,100):
             elif j == 0:
                 contamination_score = 0.0000000000000001
             if k:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (our_match_inflation)))
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (.25 )))
             else:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (1.0 - our_match_inflation)))
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (0.75 )))
            
         
-def match_score(bases,error_rates,matches,contamination_score_input,norm):    
+def match_score(bases,error_rates,matches,contamination_score_input,aligned):    
     return(np.sum([precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
 
 
@@ -179,7 +179,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=100):
         if sequence == None or read.is_secondary or len(sequence) < 500:
             unprocessed += 1
         elif read.is_unmapped:
-            aligned_set = [0 for x in read.query_sequence]
+            aligned_set = [True if random.random() < (.25) else False for index, x in enumerate(read.query_sequence)]
             matches     += sum(aligned_set)
             total += len(aligned_set)
             total_filter += 1
