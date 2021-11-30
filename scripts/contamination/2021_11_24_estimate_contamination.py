@@ -124,9 +124,9 @@ for i in range(0,100):
             elif j == 0:
                 contamination_score = 0.0000000000000001
             if k:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (.25 )))
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (.25 + our_match_inflation )))
             else:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (0.75 )))
+                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (0.75 - our_match_inflation)))
            
         
 def match_score(bases,error_rates,matches,contamination_score_input,aligned):    
