@@ -67,7 +67,7 @@ def aligned_reference_read(reference,read,start,cigar_tuples,quals,debug=False):
 
 
             elif cigar_tup[0] == 1: # insertion
-                return_alignments.extend([False] * cigar_tup[1])
+                return_alignments.extend([True if random.random() < (.25) else False for x in range(0,cigar_tup[1])])
                 return_quals.extend(quals[read_position:read_position + cigar_tup[1]])
                 read_position += cigar_tup[1]
 
@@ -79,14 +79,14 @@ def aligned_reference_read(reference,read,start,cigar_tuples,quals,debug=False):
 
             elif cigar_tup[0] == 4: # soft clip
                 for i in range(0,cigar_tup[1]):
-                    return_alignments.append(False)
+                    return_alignments.append(True if random.random() < (.25) else False)
                     return_quals.append(quals[read_position])
                     # print("SOFT " + str(len(reference)) + "\t" + str(len(read)) + "\t" + str(reference_position) + "\t" + str(read_position) + "\t" + str(i)) 
                     read_position += 1
 
             elif cigar_tup[0] == 5: # hard clip
                 for i in range(0,cigar_tup[1]):
-                    return_alignments.append(False)
+                    return_alignments.append(True if random.random() < (.25) else False)
                     return_quals.append(chr(12))
                     # read_position += 1
 
@@ -117,30 +117,31 @@ precomputed_error_rate_contamination_scores = {}
 for i in range(0,100):
     for j in range(0,1000):
         for k in [True,False]:
-            error_rate = math.pow(10,-1.0 * (i/10))
-            contamination_score = j / 1000
-            if j == 1000:
-                contamination_score = 0.9999999999999999
-            elif j == 0:
-                contamination_score = 0.0000000000000001
-            if k:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (.25 + our_match_inflation )))
-            else:
-                precomputed_error_rate_contamination_scores[(error_rate,j/1000,k)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (0.75 - our_match_inflation)))
+            for aligned in [True,False]:
+                error_rate = math.pow(10,-1.0 * (i/10))
+                contamination_score = j / 1000
+                if j == 1000:
+                    contamination_score = 0.9999999999999999
+                elif j == 0:
+                    contamination_score = 0.0000000000000001
+                if k:
+                    precomputed_error_rate_contamination_scores[(error_rate,j/1000,k,aligned)] = math.log( ((1.0 - contamination_score) * (1.0 - error_rate)) + (contamination_score * (.25 + (our_match_inflation * aligned) )))
+                else:
+                    precomputed_error_rate_contamination_scores[(error_rate,j/1000,k,aligned)] = math.log( ((1.0 - contamination_score) * error_rate) + (contamination_score * (0.75 - (our_match_inflation * aligned))))
            
         
 def match_score(bases,error_rates,matches,contamination_score_input,aligned):    
-    return(np.sum([precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i])] for i in range(0,len(bases))]))
+    return(np.sum([precomputed_error_rate_contamination_scores[(error_rates[i],contamination_score_input,matches[i],aligned)] for i in range(0,len(bases))]))
 
 
-def update_scores(scores, score_bins, bases,quals,matches,norm):
+def update_scores(scores, score_bins, bases,quals,matches,aligned):
     subsampled_positions = random.sample(range(len(bases)), 500)
     bases = [bases[i] for i in subsampled_positions]
     quals =[quals[i] for i in subsampled_positions]
     matches = [matches[i] for i in subsampled_positions]
     error_rates = [math.pow(10,-1.0 * (q/10)) for q in quals]
     for i in range(0,len(scores)):
-        scores[i] += match_score(bases,error_rates,matches,score_bins[i],norm)
+        scores[i] += match_score(bases,error_rates,matches,score_bins[i],aligned)
     
 def bam_to_alignment_stats(reference, bam_file,bins=100):
 
@@ -186,7 +187,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=100):
             total += len(aligned_set)
             total_filter += 1
             norm = math.log(max(0.0001,1.0 - (len(sequence) - min_length)/(max_length)))
-            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
+            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,False)
         else:
             position    = read.get_reference_positions()[0]
             cigar       = read.cigartuples
@@ -197,7 +198,7 @@ def bam_to_alignment_stats(reference, bam_file,bins=100):
                 good_reads += 1
             total += len(aligned_set)
             norm = math.log(max(0.0001,1.0 - (len(sequence) - min_length)/(max_length)))
-            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,norm)
+            update_scores(log_contamination_bins, contamination_representations, sequence, qualities, aligned_set,True)
     
     print(matches)
     print(total)
