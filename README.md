@@ -21,7 +21,7 @@ curl -s https://get.nextflow.io | bash
 
 Finally, running the pipeline is as easy as:
 ```
-bash ./pipelines/run_941_sample_sheet
+bash ./pipelines/run_941_sample_sheet.sh
 ```
 
 
