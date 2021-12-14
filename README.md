@@ -1,4 +1,4 @@
-![alt text](https://github.com/mckennalab/Circuitseq/blob/main/circuitSeq_logo_red.pngraw=true)
+![alt text](https://github.com/mckennalab/Circuitseq/blob/main/circuitSeq_logo_red.png?raw=true)
 
 `CircuitSeq` is a tool to assemble and analyze plasmids from Nanopore ONT long-read sequencing. This is achieved by first basecalling the raw fast5 data and demultiplexing the sample barcodes using [Guppy](https://nanoporetech.com/), filtering out chimeric reads and short reads (with [Porechop](https://github.com/rrwick/Porechop) and [NanoFilt](https://github.com/wdecoster/nanofilt)), correcting with the reads with [Canu](https://github.com/marbl/canu), assembling with [Miniasm](https://github.com/lh3/miniasm), and then subsequent rounds of polishing with [Racon](https://github.com/isovic/racon), [Medaka](https://github.com/nanoporetech/medaka), and [NextPolish](https://github.com/Nextomics/NextPolish). 
 
