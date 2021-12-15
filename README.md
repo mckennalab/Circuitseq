@@ -31,7 +31,7 @@ Finally, running the pipeline is as easy as:
 bash ./pipelines/run_941_sample_sheet.sh
 ```
 
-TODO: Docker section
+# TODO: Docker section
 
 ## Requirements
 This pipeline was tested on Ubuntu 20.04. Thanks to the Docker container most dependencies are taken care of, unfortunately running Docker on some HPC nodes requires root access, which you may have to set up with your institution. 
