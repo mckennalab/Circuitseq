@@ -40,9 +40,12 @@ bash ./pipelines/runCircuitSet.sh
 # TODO: Docker section
 
 ## Requirements
-This pipeline was tested on Ubuntu 20.04. Thanks to the Docker container most dependencies are taken care of, unfortunately running Docker on some HPC nodes requires root access, which you may have to set up with your institution. 
+This pipeline was tested on Ubuntu 20.04. Thanks to the Docker container most dependencies are taken care of, unfortunately running Docker on some HPC nodes requires permissions which you may have to set up with your institution. 
 
 One of the limiting factors in nanopore sequencing is the heavy GPU usage of basecalling data. It is highly recommended to run this pipeline on a computer with a powerful GPU. If your HPC node does not have GPUs it is possible to basecall the data locally and provide the basecalled reads as input to the CircuitSeq pipeline. 
 ```
 how?
 ```
+
+## Works in progress
+Updating the pipeline to work with guppy v6+ and Q20 models, this will likely get us to 100% identity on all plasmids. 
