@@ -6,11 +6,11 @@
 Clone the repository with `git clone https://github.com/mckennalab/Circuitseq/` in the directory where you wish to perform data analysis. 
 
 Prepare a samplesheet, an example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This has to be a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  These correspond to the number of the barcode (e.g 1-96), the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces), optionally you can provide the location where the reference file, as a fasta, is located. 
-Optional: If you would like your assemblie to be assessed for identity, contiguity, contamination, etc, save a copy of the plasmid reference, as a fasta, in the reference directory provided and add the path 
+Optional: If you would like your assemblies to be assessed for identity, contiguity, contamination, etc, save a copy of the plasmid reference, as a fasta, in the reference directory provided and add the path to the samplesheet.
 
-Modify the corresponding run file found under the pipeline directory (`run_941_sample_sheet.sh` for R9.4, `run_103_sample_sheet.sh` for R10.3). Parameter information:
+Modify the corresponding run file found under the pipeline directory (`runCircuitSeq.sh`). Parameter information:
 ```
-Gotta figure out what will be removed/added, thoughts: guppy model, medaka model, barcodes
+Gotta figure out what will be removed/added, thoughts: combine the files into one run file (runCircuitSeq.sh) that can change guppy model, medaka model, barcodes
 
 similar but different note, try to set it up so that if there is no fasta it uses a dummy pUC19 fasta reference 
 ```
