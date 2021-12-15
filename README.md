@@ -2,12 +2,19 @@
 
 `CircuitSeq` is a tool to assemble and analyze plasmids from Nanopore ONT long-read sequencing. This is achieved by first basecalling the raw fast5 data and demultiplexing the sample barcodes using [Guppy](https://nanoporetech.com/), filtering out chimeric reads and short reads (with [Porechop](https://github.com/rrwick/Porechop) and [NanoFilt](https://github.com/wdecoster/nanofilt)), correcting with the reads with [Canu](https://github.com/marbl/canu), assembling with [Miniasm](https://github.com/lh3/miniasm), and then subsequent rounds of polishing with [Racon](https://github.com/isovic/racon), [Medaka](https://github.com/nanoporetech/medaka), and [NextPolish](https://github.com/Nextomics/NextPolish). 
 
-Setup CircuitSeq:
-1) Clone the repository in the directory where you wish to perform data analysis. CircuitSeq uses a docker container to simplify dependency installation, this works best if all the external files required (sample sheet, references, etc) are within the same directory where you will run CircuitSeq. 
-2) Save the plasmid reference sequences in a subdirectory, these should be in the fasta format. This sequence is used for assembly quality assessment, the assembly will be made regardless of whether a reference sequence exists. If you do not have sequences for all plasmids we recommend making a dummy fasta that can be linked to each plasmid to avoid downstream quality assessment steps from interrupting the pipeline. 
-3) Prepare a samplesheet, this has to be a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`. These correspond to the position on the barcode plate (i.e. the barcode ID), the sampleID which can be a plasmid name or a alphanumeric code, and the location where the reference file, as a fasta, is located. 
-4) Modify the corresponding run file found under the pipeline directory (`run_941_sample_sheet.sh` for R9.4, `run_103_sample_sheet.sh` for R10.3). Items that need to be changed include: the location of the `sample sheet`, and the location of the `fast5 directory`. 
-5) Install [Nextflow](https://www.nextflow.io/) using the commands below:
+##Setup CircuitSeq
+Clone the repository with `git clone https://github.com/mckennalab/Circuitseq/` in the directory where you wish to perform data analysis. 
+
+Prepare a samplesheet, an example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This has to be a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  These correspond to the number of the barcode (e.g 1-96), the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces), optionally you can provide the location where the reference file, as a fasta, is located. 
+Optional: If you would like your assemblie to be assessed for identity, contiguity, contamination, etc, save a copy of the plasmid reference, as a fasta, in the reference directory provided and add the path 
+
+Modify the corresponding run file found under the pipeline directory (`run_941_sample_sheet.sh` for R9.4, `run_103_sample_sheet.sh` for R10.3). Parameter information:
+```
+Gotta figure out what will be removed/added, thoughts: guppy model, medaka model, barcodes
+
+similar but different note, try to set it up so that if there is no fasta it uses a dummy pUC19 fasta reference 
+```
+Install [Nextflow](https://www.nextflow.io/) using the commands below:
 ```
 #Check that you have hava 8 or later:
 java -version 
