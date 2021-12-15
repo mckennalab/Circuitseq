@@ -327,7 +327,7 @@ process Miniasm {
          ${corrected_reads} > ${datasetID}_overlaps.paf
 
     miniasm \
-    -o 3000 -I 0.9 -F 0.9 \
+    -o 500 -I 0.9 -F 0.9 \
     -f ${corrected_reads} ${datasetID}_overlaps.paf > ${datasetID}_overlaps.gfa
     """
 }
