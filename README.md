@@ -32,6 +32,10 @@ bash ./pipelines/run_testPipeline.sh
 ```
 This should result in 2 plasmid assemblies (add more detail, i will use fast5 subset to extract fast5s for 2 plasmids and provide that raw data as well as their references, it can all be in the example_sample_sheet and have an run_testPipeline.sh)
 
+Similarly, once you have modified the files mentioned above, you can run the pipeline by running:
+```
+bash ./pipelines/runCircuitSet.sh
+```
 
 # TODO: Docker section
 
