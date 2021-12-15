@@ -2,7 +2,7 @@
 
 `CircuitSeq` is a tool to assemble and analyze plasmids from Nanopore ONT long-read sequencing. This is achieved by first basecalling the raw fast5 data and demultiplexing the sample barcodes using [Guppy](https://nanoporetech.com/), filtering out chimeric reads and short reads (with [Porechop](https://github.com/rrwick/Porechop) and [NanoFilt](https://github.com/wdecoster/nanofilt)), correcting with the reads with [Canu](https://github.com/marbl/canu), assembling with [Miniasm](https://github.com/lh3/miniasm), and then subsequent rounds of polishing with [Racon](https://github.com/isovic/racon), [Medaka](https://github.com/nanoporetech/medaka), and [NextPolish](https://github.com/Nextomics/NextPolish). 
 
-##Setup CircuitSeq
+## Setup CircuitSeq
 Clone the repository with `git clone https://github.com/mckennalab/Circuitseq/` in the directory where you wish to perform data analysis. 
 
 Prepare a samplesheet, an example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This has to be a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  These correspond to the number of the barcode (e.g 1-96), the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces), optionally you can provide the location where the reference file, as a fasta, is located. 
