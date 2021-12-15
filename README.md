@@ -26,10 +26,12 @@ curl -s https://get.nextflow.io | bash
 ./nextflow run hello 
 ```
 
-Finally, running the pipeline is as easy as:
+Finally, you can test that the pipeline is working on our test data by running:
 ```
 bash ./pipelines/run_941_sample_sheet.sh
 ```
+This should result in 2 plasmid assemblies (add more detail, i will use fast5 subset to extract fast5s for 2 plasmids and provide that raw data as well as their references, it can all be in the example_sample_sheet and have an run_example.sh)
+
 
 # TODO: Docker section
 
