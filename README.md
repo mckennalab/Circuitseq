@@ -48,4 +48,8 @@ how?
 ```
 
 ## Works in progress
-Updating the pipeline to work with guppy v6+ and Q20 models, this will likely get us to 100% identity on all plasmids. 
+1) Updating the pipeline to work with guppy v6+ and Q20 models, this will likely get us to 100% identity on all plasmids. 
+2) Protocols.io step by step protocol
+
+## Our publication
+For more information please refer to our publication (link). 
