@@ -181,7 +181,7 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and send them into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}).into{ 
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}).into{ 
     guppy_demulti; 
     methylation_reads; 
     guppy_alignment; 
