@@ -82,11 +82,6 @@ RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.3.
     tar -vxzf NextPolish.tgz && cd NextPolish && make
 ENV PATH="/opt/NextPolish/:${PATH}"
 
-# cp the github pipeline files 
-# ################################################
-RUN mkdir /plasmidseq/
-RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
-
 # Install fast5_subset
 # ################################################
 RUN pip install ont-fast5-api
@@ -126,6 +121,13 @@ RUN git clone https://github.com/novoalab/modPhred /og_methyl/modPhred && \
 
 RUN pip install ont-pyguppy-client-lib==5.0.11
 
+# cp the github pipeline files 
+# ################################################
+RUN mkdir /plasmidseq/
+RUN mkdir /plasmid_test89
+
+RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+
 ## setup the annotation tool
 RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
     cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
@@ -148,7 +150,7 @@ RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz
 ENV PATH="/plasmidseq/diamond/:${PATH}"
 
 # add Flye to the docker container
-RUN git clone https://github.com/fenderglass/Flye /plasmidseq/flye/ && cd /plasmidseq/flye/ && make
-ENV PATH="/plasmidseq/flye/bin/:${PATH}"
+RUN wget https://github.com/fenderglass/Flye/archive/refs/tags/2.9.tar.gz -O /plasmidseq/Flye-2.9.tar.gz && cd /plasmidseq/ && tar xf Flye-2.9.tar.gz && cd /plasmidseq/Flye-2.9 && make
+ENV PATH="/plasmidseq/Flye-2.9/bin/:${PATH}"
 
 RUN pip install pysam

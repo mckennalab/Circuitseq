@@ -10,7 +10,7 @@
 
 input_fastq5_path  = Channel.fromPath(params.fast5).first()
 results_path       = "results"
-
+mix_in_rate = 0.19845440202552694
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
@@ -58,6 +58,9 @@ process GuppyBaseCalling {
     path "basecalling/pass/" into basecalled_directory
     path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
+    when:
+    !params.basecalling_dir
+
     script:
         
     """
@@ -89,6 +92,44 @@ process GuppyDemultiplex {
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary   // the fastq output file path
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
     
+    when:
+    !params.basecalling_dir
+    
+    script:
+        
+    """
+    guppy_barcoder \\
+        --input_path ${basecalled} \\
+        --save_path saved_data \\
+        --data_path ${params.barcodes} \\
+        --barcode_kits MY-CUSTOM-BARCODES \\
+        --front_window_size 120 \\
+        --min_score_mask 30 \\
+        -x $params.gpu_slot \\
+        --min_score $params.barcode_min_score \\
+        -q 1000000 \\
+        --compress_fastq
+    chmod -R o+rw ./
+    """
+}
+
+/*
+ * split samples by their tagmentation barcode
+ */
+process GuppyDemultiplexExisting {
+    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+    beforeScript 'chmod o+rw .'
+    publishDir "$results_path/guppy_demultiplex"
+
+    input:
+    path basecalled from params.basecalling_dir
+
+    output:
+    path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
+    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
+    
+    when:
+    params.basecalling_dir
     
     script:
         
@@ -122,6 +163,9 @@ process pycoQC {
     output:
     path "pycoQC.html" into pycoQC_HTML
     
+    when:
+    !params.basecalling_dir
+    
     script:
         
     """
@@ -137,7 +181,7 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and send them into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.into{ 
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))})into{ 
     guppy_demulti; 
     methylation_reads; 
     guppy_alignment; 
@@ -197,7 +241,7 @@ process Porechop {
     """
     porechop -i ${fastq} -o ${datasetID}_porechop.fq.gz \
         --format fastq.gz \
-        --end_threshold  50 --extra_end_trim 10 \
+        --end_threshold  50 --extra_end_trim 50 \
         --discard_middle --middle_threshold 80
     """
 }
@@ -278,7 +322,7 @@ process CanuCorrect {
     canu -correct \
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
-     corOutCoverage=60 \
+     corOutCoverage=200 \
      stopOnLowCoverage=2 minInputCoverage=2 \
      -nanopore ${to_correct} 
     """
@@ -327,7 +371,7 @@ process Miniasm {
          ${corrected_reads} > ${datasetID}_overlaps.paf
 
     miniasm \
-    -o 3000 -I 0.9 -F 0.9 \
+    -o 500 -I 0.9 -F 0.9 \
     -f ${corrected_reads} ${datasetID}_overlaps.paf > ${datasetID}_overlaps.gfa
     """
 }
@@ -784,7 +828,6 @@ process AlignReads {
 
 reference_and_reads_nanofilt = filtered_reads_minimap.phase(rotated_reference_minimap2)
 reference_and_reads_nanofilt.set{reference_and_reads_align_nanofilt}
-
 /*
  * QC process to check out how reads align after the nanofilter step
 */
@@ -799,7 +842,7 @@ process AlignReadsNanofilter {
     tuple reads,reference from reference_and_reads_align_nanofilt // reads and reference 
 
     output:
-    tuple val(str_name), path("${str_name}_aligned.bam") into minimap_reads_unsorted_nanofilter
+    tuple val(str_name), path("${str_name}_aligned.bam"),path("${str_name}_duplicate_ref.fa") into minimap_reads_unsorted_nanofilter
     tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam") into minimap_reads_nanofilter
     tuple val(str_name), path("${str_name}_sorted_mapped_reads.bam.bai") into minimap_reads_bai_nanofilter
     path("${str_name}.fasta.dict") into sequence_dict_nanofilter
@@ -811,11 +854,11 @@ process AlignReadsNanofilter {
 
     """
     grep -v ">" ${reference.get(1)} > reference_no_header.fa
-    cat ${reference.get(1)} reference_no_header.fa > duplicate_ref.fa
+    cat ${reference.get(1)} reference_no_header.fa > ${str_name}_duplicate_ref.fa
     cp ${reference.get(1)} ${str_name}.fasta
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    samtools dict duplicate_ref.fa > duplicate_ref.fa.dict
-    minimap2 -ax map-ont duplicate_ref.fa ${reads.get(1)} > ${str_name}_aligned.bam
+    samtools dict ${str_name}_duplicate_ref.fa > ${str_name}_duplicate_ref.fa.dict
+    minimap2 -ax map-ont ${str_name}_duplicate_ref.fa ${reads.get(1)} > ${str_name}_aligned.bam
     samtools sort -o ${str_name}_sorted_mapped_reads.bam ${str_name}_aligned.bam
     samtools index ${str_name}_sorted_mapped_reads.bam
     """
@@ -824,30 +867,59 @@ process AlignReadsNanofilter {
 /*
  * Run a script that checks how well our aligned BAM files do on a number of contamination metrics 
 */
-process AssessNanofiltResults {
-    publishDir "$results_path/minimap_final_nanofilter_alignment_scores"
+process AssessContamination {
+    publishDir "$results_path/contamination"
     beforeScript 'chmod o+rw .'
     
     when:
     params.quality_control_processes
 
     input:
-    tuple sample, aligned_bam from minimap_reads_unsorted_nanofilter
+    tuple sample, aligned_bam, reference from minimap_reads_unsorted_nanofilter
 
     output:
-    tuple sample, "${sample}_bam_alignment.txt" into nanofilt_alignment_assessment
-    
+    tuple sample, "${sample}_all_levels.txt" into contamination_all
+    path("${sample}_point_estimate.txt") into contamination
+
     script:
 
     """
-    python /plasmidseq/scripts/contamination/extract_stats.py \
+    python /plasmidseq/scripts/contamination/2021_11_24_estimate_contamination.py \
     --bamfile ${aligned_bam} \
-    --output ${sample}_bam_alignment.txt \
-    --sample ${sample}
+    --reference ${reference} \
+    --sample ${sample} \
+    --plasmid_mix_in_rate ${mix_in_rate} \
+    --sample_range ${sample}_all_levels.txt \
+    --sample_estimate ${sample}_point_estimate.txt
     """
 }
 
 
+/*
+ * aggregate all the plasmid comparisons into a single file
+ */
+process ContaminationAggregation {
+    errorStrategy 'finish'
+    publishDir "$results_path/agg_contam"
+    beforeScript 'chmod o+rw .'
+    
+    when:
+    params.quality_control_processes
+
+    input:
+    file point_estimate from contamination.toList()
+    
+    output:
+
+    file('all_contamination_stats.txt')
+    
+    script:
+
+    """
+    echo "assembly\tcontamination" > header.txt
+    cat header.txt ${point_estimate.collect().join(" ")} > all_contamination_stats.txt
+    """
+}
 
 /*
  * Create an alignment of the reference and the known (provided) plasmid map
