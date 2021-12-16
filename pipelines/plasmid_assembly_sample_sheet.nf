@@ -276,7 +276,11 @@ process AlignReadsPostLengthFilter {
     """
     }
 
-
+if(!params.base_calling_summary_file) {
+    basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first()
+} else {
+    basecalling_summary_file_mix = Channel.fromPath(params.base_calling_summary_file).first()
+}
 /*
  * Filter reads by quality
  */
@@ -286,7 +290,7 @@ process AlignReadsPostLengthFilter {
 
     input:
     tuple val(datasetID), file(tofilter) from porechop_output
-    path summary from basecalling_summary_file
+    path summary from basecalling_summary_file_mix
     
     output:
     tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap
