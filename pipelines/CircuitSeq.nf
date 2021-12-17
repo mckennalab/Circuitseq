@@ -349,7 +349,7 @@ process Flye {
     flye -g 10k --nano-corr \
          ${corrected_reads} \
          -o ${datasetID}_assembly \
-         --min-overlap 1000
+         --min-overlap 1000 -t 8
 
     """
 }
@@ -598,6 +598,7 @@ process NextPolish {
 
     input:
     val tuple_pack from read_phased_medaka_for_nextpolish.filter{ it.get(1).get(1).countFasta()>=1} 
+    path config from params.nextpolish_cfg
     output:
     
     set datasetID, file("${datasetID}.nextpolish.fasta") into nextpolish_consensus, nextpolish_consensus_assessment
@@ -609,7 +610,7 @@ process NextPolish {
     """
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextPolish ./pipelines/run.cfg
+    nextPolish ${config}
     cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish.fasta
     cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish.fasta.stat
     """
@@ -630,7 +631,7 @@ process NextPolish2CommaThePolishing {
 
     input:
     val tuple_pack from read_phased_nextpolish_for_nextpolish2.filter{ it.get(1).get(1).countFasta()>=1} 
-
+    path config from params.nextpolish_cfg
     output:
     
     set datasetID, file("${datasetID}.nextpolish2.fasta") into nextpolish_consensus2, nextpolish_consensusTest, nextpolish_consensus_assessment2
@@ -641,7 +642,7 @@ process NextPolish2CommaThePolishing {
     """
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextPolish ./pipelines/run.cfg
+    nextPolish ${config}
     cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish2.fasta
     cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish2.fasta.stat
     """

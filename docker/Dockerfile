@@ -129,6 +129,7 @@ RUN mkdir /plasmid_test89
 
 RUN --mount=type=secret,id=mysecret git clone https://femiliani:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
 
+
 ## setup the annotation tool
 RUN pip install typing-extensions==3.10.0.0
 RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
@@ -156,3 +157,4 @@ RUN wget https://github.com/fenderglass/Flye/archive/refs/tags/2.9.tar.gz -O /pl
 ENV PATH="/plasmidseq/Flye-2.9/bin/:${PATH}"
 
 RUN pip install pysam
+RUN pip install paralleltask
