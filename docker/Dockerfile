@@ -77,15 +77,10 @@ ENV PATH="/ont/miniasm/:${PATH}"
 # ################################################
 RUN apt install -y libncurses5-dev libncursesw5-dev libbz2-dev libclang-dev liblzma-dev
 RUN pip install psutil
-RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.3.1/NextPolish.tgz -O /ont/NextPolish.tgz && \
+RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.4.0/NextPolish.tgz -O /ont/NextPolish.tgz && \
     cd /ont/ && \
     tar -vxzf NextPolish.tgz && cd NextPolish && make
-ENV PATH="/opt/NextPolish/:${PATH}"
-
-# cp the github pipeline files 
-# ################################################
-RUN mkdir /plasmidseq/
-RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+ENV PATH="/ont/NextPolish/:${PATH}"
 
 # Install fast5_subset
 # ################################################
@@ -93,6 +88,7 @@ RUN pip install ont-fast5-api
 
 # java 1.8 is needed by canu
 # ################################################
+RUN apt update
 RUN apt install -y openjdk-8-jdk
 
 # Medaka for sequence correction - lots of deps
@@ -126,7 +122,15 @@ RUN git clone https://github.com/novoalab/modPhred /og_methyl/modPhred && \
 
 RUN pip install ont-pyguppy-client-lib==5.0.11
 
+# cp the github pipeline files 
+# ################################################
+RUN mkdir /plasmidseq/
+RUN mkdir /plasmid_test89
+
+RUN --mount=type=secret,id=mysecret git clone https://femiliani:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+
 ## setup the annotation tool
+RUN pip install typing-extensions==3.10.0.0
 RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
     cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
 RUN wget https://github.com/barricklab/pLannotate/releases/download/v1.0.3/BLAST_dbs.tar.gz -O /plasmidseq/pLannotate/BLAST_dbs.tar.gz && \
@@ -148,7 +152,7 @@ RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz
 ENV PATH="/plasmidseq/diamond/:${PATH}"
 
 # add Flye to the docker container
-RUN git clone https://github.com/fenderglass/Flye /plasmidseq/flye/ && cd /plasmidseq/flye/ && make
-ENV PATH="/plasmidseq/flye/bin/:${PATH}"
+RUN wget https://github.com/fenderglass/Flye/archive/refs/tags/2.9.tar.gz -O /plasmidseq/Flye-2.9.tar.gz && cd /plasmidseq/ && tar xf Flye-2.9.tar.gz && cd /plasmidseq/Flye-2.9 && make
+ENV PATH="/plasmidseq/Flye-2.9/bin/:${PATH}"
 
 RUN pip install pysam

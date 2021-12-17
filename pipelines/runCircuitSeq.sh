@@ -1,6 +1,6 @@
 ./nextflow ./pipelines/CircuitSeq.nf \
            --GPU ON \
-           -c ../nextflow.config \
+           -c ./nextflow.config \
            --with-docker \
            --samplesheet ./example_sample_sheet.tsv \
            --barcodes /plasmidseq/barcodes/v2/ \

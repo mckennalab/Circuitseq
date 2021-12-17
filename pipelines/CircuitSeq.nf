@@ -18,7 +18,7 @@ mix_in_rate = 0.19845440202552694
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
         .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
-        .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
+        .into{sample_table; sample_table_assessment; sample_table_assessment2;  sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation; sample_table_flye}
 
 // check if they've asked for methylation calling, if not, set it to false
 if (!binding.hasVariable('params.methylation_calling')) {
@@ -158,7 +158,7 @@ process pycoQC {
 
     input:
     path basecalling_summary from basecalling_summary_for_pyco
-    path barcode_summary from barcoding_split_summary
+    path barcode_summary from barcoding_split_summary_existing
 
     output:
     path "pycoQC.html" into pycoQC_HTML
@@ -181,8 +181,7 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and send them into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))})into{ 
-    guppy_demulti; 
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}).into{     guppy_demulti; 
     methylation_reads; 
     guppy_alignment; 
 }
@@ -276,7 +275,11 @@ process AlignReadsPostLengthFilter {
     """
     }
 
-
+if(!params.base_calling_summary_file) {
+    basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first()
+} else {
+    basecalling_summary_file_mix = Channel.fromPath(params.base_calling_summary_file).first()
+}
 /*
  * Filter reads by quality
  */
@@ -286,7 +289,7 @@ process AlignReadsPostLengthFilter {
 
     input:
     tuple val(datasetID), file(tofilter) from porechop_output
-    path summary from basecalling_summary_file
+    path summary from basecalling_summary_file_mix
     
     output:
     tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap
@@ -339,7 +342,7 @@ process Flye {
     tuple val(datasetID), path(corrected_reads) from canu_corrected_flye.filter(){it.get(1).countLines() >= 20}
 
     output:
-    tuple val(datasetID), path("${datasetID}_assembly/assembly.fasta") into flye_assembly
+    tuple val(datasetID), path("${datasetID}_assembly/assembly.fasta") into flye_assembly, flye_qc
     
     script:
     """
@@ -595,7 +598,6 @@ process NextPolish {
 
     input:
     val tuple_pack from read_phased_medaka_for_nextpolish.filter{ it.get(1).get(1).countFasta()>=1} 
-    path config from params.nanopolish_run_config
     output:
     
     set datasetID, file("${datasetID}.nextpolish.fasta") into nextpolish_consensus, nextpolish_consensus_assessment
@@ -607,7 +609,7 @@ process NextPolish {
     """
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextpolish ./pipelines/run.cfg
+    nextPolish ./pipelines/run.cfg
     cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish.fasta
     cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish.fasta.stat
     """
@@ -628,7 +630,6 @@ process NextPolish2CommaThePolishing {
 
     input:
     val tuple_pack from read_phased_nextpolish_for_nextpolish2.filter{ it.get(1).get(1).countFasta()>=1} 
-    path config from params.nanopolish_run_config
 
     output:
     
@@ -640,7 +641,7 @@ process NextPolish2CommaThePolishing {
     """
     cp ${tuple_pack.get(1).get(1)} consensus.fasta
     echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextpolish ./pipelines/run.cfg
+    nextPolish ./pipelines/run.cfg
     cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish2.fasta
     cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish2.fasta.stat
     """
@@ -679,6 +680,7 @@ process LCPCorrection {
  */
 read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
 
+
 /*
  * attempt to align the known reference and our assembly for downstream comparison
  */
@@ -692,6 +694,29 @@ process Rotated {
     
     output:
     set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_minimap2, rotated_reference_eval, rotated_reference_methyl
+    
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    python /plasmidseq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
+    """
+}
+
+read_phased_flye = flye_qc.phase(sample_table_flye)
+/*
+ * attempt to align the known reference and our assembly for downstream comparison
+ */
+process RotatedF {
+    errorStrategy 'finish'
+    publishDir "$results_path/rotatedFlye"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    val tuple_pack from read_phased_flye
+    
+    output:
+    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_eval_flye
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -989,6 +1014,55 @@ process PlasmidComparisonCollection {
 
     input:
     file stats from plasmid_comp.toList()
+    
+    output:
+    file('all_rotated.stats')
+    
+    script:
+
+    """
+    echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
+    cat header.txt ${stats.collect().join(" ")} > all_rotated.stats
+    """
+}
+
+/*
+ * assess the map-reference alignment
+ */
+process PlasmidComparisonF {
+    errorStrategy 'finish'
+    publishDir "$results_path/plasmid_flye_comp"
+    beforeScript 'chmod o+rw .'
+
+    when:
+    params.quality_control_processes
+
+    input:
+    tuple sample, assembled, ref from rotated_reference_eval_flye
+    
+    output:
+    path("${sample}_rotated.stats") into plasmid_comp_flye
+    
+    script:
+
+    """
+    assess_assembly.py ${assembled} ${ref} --mode replicon > ${sample}_rotated.stats
+    """
+}
+
+/*
+ * aggregate all the plasmid comparisons into a single file
+ */
+process PlasmidComparisonCollectionF {
+    errorStrategy 'finish'
+    publishDir "$results_path/plasmid_flye_stat"
+    beforeScript 'chmod o+rw .'
+    
+    when:
+    params.quality_control_processes
+
+    input:
+    file stats from plasmid_comp_flye.toList()
     
     output:
     file('all_rotated.stats')
