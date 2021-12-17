@@ -54,7 +54,7 @@ def traceback(matrix, a,b):
     substr_a = a[index_i]
     substr_b = b[index_j]
     
-    while index_i >= 0 and index_j >= 0 and matrix[index_i][index_j] > 0:
+    while index_i > 0 and index_j > 0 and matrix[index_i][index_j] > 0:
         transitions = np.argmax([matrix[index_i-1,index_j],matrix[index_i-1,index_j-1],matrix[index_i,index_j-1]])
         if transitions == 0:
             substr_a += a[index_i - 1]
