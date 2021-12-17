@@ -4,10 +4,12 @@
 # ========================================================================================
 #  attempt to remove duplicated segments that are 'too large' from the assembly
 # ----------------------------------------------------------------------------------------
+import itertools
 import numpy as np
-from pydivsufsort import divsufsort, kasai
 import argparse
 import sys
+import math
+from pydivsufsort import divsufsort, kasai
 
 parser = argparse.ArgumentParser(
     description="Attempt to remove duplicated regions from a plasmid"
@@ -18,207 +20,122 @@ parser.add_argument(
     required=True,
 )
 
-
 parser.add_argument("--output_fasta", required=True, help="the output fasta file")
 
 args = parser.parse_args()
 
-ref = ""
-reference_input = open(args.plasmid_fasta)
-header = reference_input.readline()
-for line in reference_input:
-    ref += line.strip()
-print(ref[0:20])
 
+def matrix(seq1, seq2, match_score=2, gap_cost=1,min_bandwidth=100):
+    assert(len(seq1) >= len(seq2))
+    
+    H = np.zeros((len(seq1), len(seq2)), np.int)
 
-class CoverageMap:
-    def __init__(
-        self, string, strsuffix_array, string_lcp_array, minimum_merge_length=600
-    ):
-        self.string = string
-        self.strsuffix_array = strsuffix_array
-        self.string_lcp_array = string_lcp_array
+    # we know seq 1 is the larger sequence
+    bandwidth = (len(seq1) - len(seq2)) + min_bandwidth 
+    scale_factor = float(len(seq2)) / float(len(seq1))
+    print(bandwidth)
+    print(scale_factor)
+    #for i, j in itertools.product(range(1, H.shape[0]), range(1, H.shape[1])):
+    for i in range(0,H.shape[0]):
+        scaled_i = int(scale_factor * i)
+        for j in range(max(0,scaled_i - min_bandwidth),min(H.shape[1],scaled_i + min_bandwidth)):
+            match = H[i - 1, j - 1] + (match_score if seq1[i - 1] == seq2[j - 1] else - match_score)
+            delete = H[i - 1, j] - gap_cost
+            insert = H[i, j - 1] - gap_cost
+            H[i, j] = max(match, delete, insert, 0)
+    return H
 
-        self.longest_coverage_segments = np.zeros(len(string), dtype=np.uintc)
-        self.string_lcp_array_sorted_indexes = np.argsort(self.string_lcp_array)
-        self.minimum_length_segments = []
-        self.minimum_merge_length = minimum_merge_length
-
-        for index, segment in enumerate(self.string_lcp_array_sorted_indexes):
-            if segment + 1 < len(string):
-                position1 = self.strsuffix_array[segment]
-                position2 = self.strsuffix_array[segment + 1]
-                seg_length = self.string_lcp_array[segment]
-
-                self.longest_coverage_segments[
-                    position1 : position1 + seg_length
-                ] = index
-                self.longest_coverage_segments[
-                    position2 : position2 + seg_length
-                ] = index
-
-                if seg_length > minimum_merge_length:
-                    self.minimum_length_segments.append(index)
-        self.do_search = len(self.minimum_length_segments) > 0
-
-    def find_co_segment_positions(self, segment_number):
-        largest_segment_positions = np.where(
-            self.longest_coverage_segments == segment_number
-        )
-        largest_segment_max_position = int(np.max(largest_segment_positions))
-        largest_segment_max_start_position = int(
-            np.max(largest_segment_positions) - (largest_segment_positions[0].size / 2)
-        )
-        largest_segment_min_position = int(np.min(largest_segment_positions))
-        largest_segment_min_end_position = int(
-            np.min(largest_segment_positions) + (largest_segment_positions[0].size / 2)
-        )
-
-        return (
-            largest_segment_min_position,
-            largest_segment_min_end_position,
-            largest_segment_max_start_position,
-            largest_segment_max_position,
-            largest_segment_positions[0].size,
-        )
-
-    def grow_longest_segments(self, allowed_base_skips):
-        assert self.minimum_merge_length > allowed_base_skips
-
-        # find the longest segment
-        counts = np.bincount(self.longest_coverage_segments)
-        largest_segment = np.argmax(counts)
-        absorbed_segments = []
-
-        searching_for_extensions = True
-        while searching_for_extensions:
-            largest_segment_positions = self.find_co_segment_positions(largest_segment)
-            searching_for_extensions = False
-            # print(largest_segment_positions)
-            # print(largest_segment_positions[2])
-            left_slice_1 = self.longest_coverage_segments[
-                max(
-                    0, largest_segment_positions[0] - allowed_base_skips
-                ) : largest_segment_positions[0]
-            ]
-            left_slice_2 = self.longest_coverage_segments[
-                max(
-                    0, largest_segment_positions[2] - allowed_base_skips
-                ) : largest_segment_positions[2]
-            ]
-            left_intersect = np.intersect1d(left_slice_1, left_slice_2)
-            # print("left intersect")
-            # print(left_intersect)
-            for left_overlap in left_intersect:
-                if left_overlap in self.minimum_length_segments and not (
-                    left_overlap in absorbed_segments
-                ):
-                    searching_for_extensions = True
-                    absorbed_segments.append(left_overlap)
-                    self.longest_coverage_segments[
-                        max(
-                            0, largest_segment_positions[0] - allowed_base_skips
-                        ) : largest_segment_positions[0]
-                    ] = largest_segment
-                    self.longest_coverage_segments[
-                        max(
-                            0, largest_segment_positions[2] - allowed_base_skips
-                        ) : largest_segment_positions[2]
-                    ] = largest_segment
-                    new_cover = np.where(self.longest_coverage_segments == left_overlap)
-                    # print("COVER")
-                    # print(len(new_cover))
-                    self.longest_coverage_segments[new_cover] = largest_segment
-
-            right_slice_1 = self.longest_coverage_segments[
-                largest_segment_positions[1] : min(
-                    largest_segment_positions[1] + allowed_base_skips, len(self.string)
-                )
-            ]
-            right_slice_2 = self.longest_coverage_segments[
-                largest_segment_positions[3] : min(
-                    largest_segment_positions[3] + allowed_base_skips, len(self.string)
-                )
-            ]
-            right_intersect = np.intersect1d(right_slice_1, right_slice_2)
-            # print("right_intersect intersect")
-            # print(right_intersect)
-            for right_overlap in right_intersect:
-                if right_overlap in self.minimum_length_segments and not (
-                    right_overlap in absorbed_segments
-                ):
-                    searching_for_extensions = True
-                    absorbed_segments.append(right_overlap)
-                    self.longest_coverage_segments[
-                        largest_segment_positions[1] : min(
-                            largest_segment_positions[1] + allowed_base_skips,
-                            len(self.string),
-                        )
-                    ] = largest_segment
-                    self.longest_coverage_segments[
-                        largest_segment_positions[3] : min(
-                            largest_segment_positions[3] + allowed_base_skips,
-                            len(self.string),
-                        )
-                    ] = largest_segment
-                    new_cover = np.where(
-                        self.longest_coverage_segments == right_overlap
-                    )
-                    # print("COVER")
-                    # print(len(new_cover))
-                    self.longest_coverage_segments[new_cover] = largest_segment
-
-        self.largest_segment = largest_segment
-
-    def subset_reference_to_repeat_free(self, allowed_base_skips):
-        if self.do_search:
-            self.grow_longest_segments(allowed_base_skips)
-            segment_positions = self.find_co_segment_positions(self.largest_segment)
-            segment1 = self.string[segment_positions[0] : segment_positions[2]]
-            segment2 = self.string[segment_positions[3] : len(self.string)]
-            segment3 = self.string[0 : segment_positions[0]]
-            # print("DSFSFSDF")
-            # print(segment1)
-            # print(segment2)
-            # print(segment3)
-            print((segment1 + segment2 + segment3, segment_positions))
-            return ((segment1 + segment2 + segment3, segment_positions))
+def traceback(matrix, a,b):
+    max_index = np.unravel_index(matrix.argmax(), matrix.shape)
+    
+    index_i = max_index[0]
+    index_j = max_index[1]
+    
+    substr_a = a[index_i]
+    substr_b = b[index_j]
+    
+    while index_i >= 0 and index_j >= 0 and matrix[index_i][index_j] > 0:
+        transitions = np.argmax([matrix[index_i-1,index_j],matrix[index_i-1,index_j-1],matrix[index_i,index_j-1]])
+        if transitions == 0:
+            substr_a += a[index_i - 1]
+            substr_b += '-'
+            index_i -= 1
+        elif transitions == 1:
+            substr_a += a[index_i - 1]
+            substr_b += b[index_j - 1]
+            index_i -= 1
+            index_j -= 1
+        elif transitions == 2:
+            substr_a += '-'
+            substr_b += b[index_j - 1]
+            index_j -= 1
         else:
-            print((self.string, (0, 0, 0, 0, 0)))
-            return((self.string, (0, 0, 0, 0, 0)))
+            raise NameError("did something dumb")
+    return((matrix[max_index[0],max_index[1]],substr_a[::-1],substr_b[::-1],max_index,(index_i,index_j)))
 
+def load_plasmid(fasta):
+    pl_file = open(fasta)
+    header = pl_file.readline()
+    sequence = ""
+    for line in pl_file:
+        sequence += line.strip().upper()
+    return((header,sequence))
 
-def find_overlapping_fragments(input_string, minimum_length, spacing):
-    lcps = []
-    lcps_indexes = []
-    best_ref = None
-    best_rep_length = -1
+def create_final_plasmid(sequence1,sequence2,subseq1,subseq2,score,minimum_length=1000,minumum_score_prop=1.8):
+    # create a plasmid that's the first segment plus the second, which will preserve the alignment orientation
+    full = sequence1 + sequence2
+    if max(len(subseq1),len(subseq2)) > minimum_length and float(score)/max(len(subseq1),len(subseq2)) > minumum_score_prop:
+        # we drop the smaller seqment from the plasmid
+        no_gap_seg1 = "".join([x if x != '-' else "" for x in subseq1])
+        no_gap_seg2 = "".join([x if x != '-' else "" for x in subseq2])
+        no_gap_seg1_pos = full.index(no_gap_seg1)
+        no_gap_seg2_pos = full.index(no_gap_seg2)
+        
+        if len(no_gap_seg1) > len(no_gap_seg2):
+            print(len(full[0:no_gap_seg2_pos] + full[no_gap_seg2_pos+len(no_gap_seg2):len(full)]))
+            return(full[0:no_gap_seg2_pos] + full[no_gap_seg2_pos+len(no_gap_seg2):len(full)])
+        else:
+            print(len(full[0:no_gap_seg1_pos] + full[no_gap_seg1_pos+len(no_gap_seg1):len(full)]))
+            return(full[0:no_gap_seg1_pos] + full[no_gap_seg1_pos+len(no_gap_seg1):len(full)])
+    else:
+        print(len(full))
+        return(full)
+        
+    
 
-    for i in range(0, len(input_string), spacing):
-        # print("******* LOOP ******* ")
-        rotation_string = input_string[i : len(input_string)] + input_string[0:i]
-        # print(rotation_string)
-        strsuffix_array = divsufsort(rotation_string)
-        string_lcp_array = kasai(rotation_string, strsuffix_array)
-
-        # sometimes small mismatches break up our fragments; try to extend over them
-        cmap = CoverageMap(
-            rotation_string, strsuffix_array, string_lcp_array, minimum_length
-        )
-        new_ref = cmap.subset_reference_to_repeat_free(300)
-
-        print(new_ref)
-        if new_ref[1][4] > best_rep_length:
-            best_ref = new_ref
-            best_rep_length = new_ref[1][4]
-
-    return best_ref
-
-
-lcps_plasmid = find_overlapping_fragments(ref, 500, 200)
-
+fasta_file = args.plasmid_fasta
+#fasta_file = "/analysis/2021_08_26_PlasmidSeq_paper/scripts/processing/dup_del/15_rotated.fasta"
+fasta_header = load_plasmid(fasta_file)
+fasta = fasta_header[1]
+header = fasta_header[0]
 output = open(args.output_fasta, "w")
-output.write(
-    header.strip() + "_" + "_".join([str(x) for x in lcps_plasmid[1:6]]) + "\n"
-)
-output.write(lcps_plasmid[0] + "\n")
+output.write(header)
+
+strsuffix_array = divsufsort(fasta)
+string_lcp_array = kasai(fasta, strsuffix_array)
+
+max_pos = np.argmax(string_lcp_array)
+max_start = strsuffix_array[max_pos]
+max_start2 = strsuffix_array[max_pos+1]
+
+segment1 = fasta[max_start:max_start2]
+segment2 = fasta[max_start2:len(fasta)] + fasta[0:max_start]
+
+if max_start > max_start2:
+    segment1 = fasta[max_start2:max_start]
+    segment2 = fasta[max_start:len(fasta)] + fasta[0:max_start2]
+    
+if len(segment1) > len(segment2):
+    mat = matrix(segment1,segment2)
+    print("traceback")
+    tb = traceback(mat,segment1,segment2)
+    full = create_final_plasmid(segment1,segment2,tb[1],tb[2],tb[0])
+    output.write(full + "\n")
+else:
+    mat = matrix(segment2,segment1)
+    print("traceback")
+    tb = traceback(mat,segment2,segment1)
+    full = create_final_plasmid(segment2,segment1,tb[1],tb[2],tb[0])
+    output.write(full + "\n")
+
+output.close()
