@@ -30,15 +30,8 @@ def matrix(seq1, seq2, match_score=2, gap_cost=1,min_bandwidth=100):
     
     H = np.zeros((len(seq1), len(seq2)), np.int)
 
-    # we know seq 1 is the larger sequence
-    bandwidth = (len(seq1) - len(seq2)) + min_bandwidth 
-    scale_factor = float(len(seq2)) / float(len(seq1))
-    print(bandwidth)
-    print(scale_factor)
-    #for i, j in itertools.product(range(1, H.shape[0]), range(1, H.shape[1])):
     for i in range(0,H.shape[0]):
-        scaled_i = int(scale_factor * i)
-        for j in range(max(0,scaled_i - min_bandwidth),min(H.shape[1],scaled_i + min_bandwidth)):
+        for j in range(0,H.shape[1]):
             match = H[i - 1, j - 1] + (match_score if seq1[i - 1] == seq2[j - 1] else - match_score)
             delete = H[i - 1, j] - gap_cost
             insert = H[i, j - 1] - gap_cost
@@ -104,7 +97,6 @@ def create_final_plasmid(sequence1,sequence2,subseq1,subseq2,score,minimum_lengt
     
 
 fasta_file = args.plasmid_fasta
-#fasta_file = "/analysis/2021_08_26_PlasmidSeq_paper/scripts/processing/dup_del/15_rotated.fasta"
 fasta_header = load_plasmid(fasta_file)
 fasta = fasta_header[1]
 header = fasta_header[0]
