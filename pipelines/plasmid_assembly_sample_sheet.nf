@@ -1,5 +1,6 @@
 #!/usr/bin/env nextflow
 
+
 /*
 ========================================================================================
                          mckenna_lab/plasmid_seq
@@ -19,6 +20,21 @@ Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
         .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
         .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
+
+
+
+// check if they've provided a previous basecalling results directory; if not, 
+// do the basecalling ahead of everything else
+basecalling_dir = file('nope')
+base_calling_summary_file_input = file('nope')
+do_base_calling = true    
+if (params.basecalling_location) {
+    do_base_calling = false
+    basecalling_dir = file(params.basecalling_location + "/pass/")
+    base_calling_summary_file_input = file(params.basecalling_location + "/sequencing_summary.txt")
+}
+log.info "basecalling  : " + do_base_calling
+log.info "basecalling dir  : " + basecalling_dir
 
 // check if they've asked for methylation calling, if not, set it to false
 if (!binding.hasVariable('params.methylation_calling')) {
@@ -59,7 +75,7 @@ process GuppyBaseCalling {
     path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
     when:
-    !params.basecalling_dir
+    do_base_calling
 
     script:
         
@@ -93,7 +109,7 @@ process GuppyDemultiplex {
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
     
     when:
-    !params.basecalling_dir
+    do_base_calling
     
     script:
         
@@ -121,15 +137,16 @@ process GuppyDemultiplexExisting {
     beforeScript 'chmod o+rw .'
     publishDir "$results_path/guppy_demultiplex"
 
+    when:
+    !do_base_calling
+
     input:
-    path basecalled from params.basecalling_dir
+    path basecalled from basecalling_dir
 
     output:
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
     
-    when:
-    params.basecalling_dir
     
     script:
         
@@ -164,7 +181,7 @@ process pycoQC {
     path "pycoQC.html" into pycoQC_HTML
     
     when:
-    !params.basecalling_dir
+    do_base_calling
     
     script:
         
@@ -276,10 +293,10 @@ process AlignReadsPostLengthFilter {
     """
     }
 
-if(!params.base_calling_summary_file) {
+if(!base_calling_summary_file_input) {
     basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first()
 } else {
-    basecalling_summary_file_mix = Channel.fromPath(params.base_calling_summary_file).first()
+    basecalling_summary_file_mix = Channel.fromPath(base_calling_summary_file_input).first()
 }
 /*
  * Filter reads by quality
@@ -336,6 +353,8 @@ process CanuCorrect {
  * Assemble corrected reads with Flye
  */
 process Flye {
+    time '3s'
+    errorStrategy 'ignore'
     publishDir "$results_path/flye"
     beforeScript 'chmod o+rw .'
 
@@ -359,6 +378,7 @@ process Flye {
  * Assemble corrected reads with Miniasm 
  */
 process Miniasm {
+    errorStrategy 'ignore'
     publishDir "$results_path/miniasm"
     beforeScript 'chmod o+rw .'
 
@@ -428,10 +448,9 @@ process ConvertGraph {
 assembly_phase = flye_assembly.phase(miniasm_assembly, remainder: true)
 
 /*
- * Check for any really poor quality assemblies
+ * Take miniasm if it completed, otherwise take Flye
  */
 process AssessAssemblyApproach {
-    errorStrategy 'finish'
     publishDir "$results_path/assembly_choice"
     beforeScript 'chmod o+rw .'
 
@@ -442,11 +461,12 @@ process AssessAssemblyApproach {
     tuple val(str_name), path("${str_name}_${method}_assembly.fasta") into fasta_graph
 
     script:
-
-    str_name = phased_assemblies.get(0).get(0)
-    myFlye = (phased_assemblies.get(0) == null) ? 'mydefaultvalue' : phased_assemblies.get(0).get(1)
-    myMiniasm = (phased_assemblies.get(1) == null) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
-    method = (phased_assemblies.get(1) == null) ? "flye" : "miniasm"
+    
+    str_name = (!phased_assemblies.get(0)) ? phased_assemblies.get(1).get(0) : phased_assemblies.get(0).get(0)
+    myFlye = (!phased_assemblies.get(0)) ? 'mydefaultvalue' : phased_assemblies.get(0).get(1)
+    myMiniasm = (!phased_assemblies.get(1)) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
+    method = (!phased_assemblies.get(1)) ? "flye" : "miniasm"
+    
     """
     if [ -f "${myMiniasm}" ]; then
         cp ${myMiniasm} ${str_name}_${method}_assembly.fasta
@@ -455,7 +475,13 @@ process AssessAssemblyApproach {
     fi
     """
 }
-
+/*
+f [ -f "${myMiniasm}" ]; then
+        cp ${myMiniasm} ${str_name}_${method}_assembly.fasta
+    else 
+        cp ${myFlye} ${str_name}_${method}_assembly.fasta
+    fi
+    */
 
 /*
  * phase the reads to the filtered assembly from the last step
