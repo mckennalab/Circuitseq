@@ -127,6 +127,7 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 RUN mkdir /plasmidseq/
 RUN mkdir /plasmid_test89
 
+RUN mkdir /plasmid_test90
 RUN --mount=type=secret,id=mysecret git clone https://femiliani:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
 
 
