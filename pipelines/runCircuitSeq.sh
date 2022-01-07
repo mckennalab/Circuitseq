@@ -1,0 +1,13 @@
+./nextflow ./pipelines/CircuitSeqFlyMed.nf \
+           --GPU ON \
+           -c ./nextflow.config \
+           --with-docker \
+           --samplesheet fex_120_sample_sheet_relative_sort.tsv \
+           --barcodes /plasmidseq/barcodes/v2/ \
+           --fast5 /dartfs2/rc/lab/M/McKennaLab/projects/Oxford_computer_backup/data/FEX_120/96_v2/20210803_1913_MN34875_AHC239_bdcd3859/fast5/ \
+           --guppy_model dna_r9.4.1_450bps_sup.cfg \
+           --medaka_model r941_min_sup_g507 \
+           --gpu_slot cuda:0 \
+           -with-report report.html \
+           --barcode_min_score 65 \
+           -resume
