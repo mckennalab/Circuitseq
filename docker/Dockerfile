@@ -77,10 +77,10 @@ ENV PATH="/ont/miniasm/:${PATH}"
 # ################################################
 RUN apt install -y libncurses5-dev libncursesw5-dev libbz2-dev libclang-dev liblzma-dev
 RUN pip install psutil
-RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.3.1/NextPolish.tgz -O /ont/NextPolish.tgz && \
+RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.4.0/NextPolish.tgz -O /ont/NextPolish.tgz && \
     cd /ont/ && \
     tar -vxzf NextPolish.tgz && cd NextPolish && make
-ENV PATH="/opt/NextPolish/:${PATH}"
+ENV PATH="/ont/NextPolish/:${PATH}"
 
 # Install fast5_subset
 # ################################################
@@ -88,6 +88,7 @@ RUN pip install ont-fast5-api
 
 # java 1.8 is needed by canu
 # ################################################
+RUN apt update
 RUN apt install -y openjdk-8-jdk
 
 # Medaka for sequence correction - lots of deps
@@ -124,11 +125,12 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 # cp the github pipeline files 
 # ################################################
 RUN mkdir /plasmidseq/
-RUN mkdir /plasmid_test89
 
 RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
 
+
 ## setup the annotation tool
+RUN pip install typing-extensions==3.10.0.0
 RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
     cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
 RUN wget https://github.com/barricklab/pLannotate/releases/download/v1.0.3/BLAST_dbs.tar.gz -O /plasmidseq/pLannotate/BLAST_dbs.tar.gz && \
@@ -154,3 +156,9 @@ RUN wget https://github.com/fenderglass/Flye/archive/refs/tags/2.9.tar.gz -O /pl
 ENV PATH="/plasmidseq/Flye-2.9/bin/:${PATH}"
 
 RUN pip install pysam
+RUN pip install paralleltask
+
+RUN git clone https://github.com/mckennalab/DupScoop.git /plasmidseq/dupscoop/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cd /plasmidseq/dupscoop/ && cargo build --release
