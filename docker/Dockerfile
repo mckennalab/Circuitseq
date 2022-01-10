@@ -125,7 +125,6 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 # cp the github pipeline files 
 # ################################################
 RUN mkdir /plasmidseq/
-
 RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
 
 
@@ -158,6 +157,7 @@ ENV PATH="/plasmidseq/Flye-2.9/bin/:${PATH}"
 RUN pip install pysam
 RUN pip install paralleltask
 
+RUN mkdir /plasmidseq/dupscoop2/
 RUN git clone https://github.com/mckennalab/DupScoop.git /plasmidseq/dupscoop/
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"

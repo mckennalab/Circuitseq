@@ -34,7 +34,6 @@ if (params.basecalling_location) {
 log.info "basecalling  : " + do_base_calling
 log.info "basecalling dir  : " + basecalling_dir
 
-
 // check if they've asked for methylation calling, if not, set it to false
 if (!binding.hasVariable('params.methylation_calling')) {
     params.methylation_calling = false
@@ -289,14 +288,11 @@ process AlignReadsPostLengthFilter {
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
     minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
     samtools index ${str_name}_sorted_post_lf_reads.bam
-    """
+     """
     }
 
-if(!base_calling_summary_file_input) {
-    basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first()
-} else {
-    basecalling_summary_file_mix = Channel.fromPath(base_calling_summary_file_input).first()
-}
+//basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first().mix(Channel.fromPath(base_calling_summary_file_input).first())
+
 /*
  * Filter reads by quality
  */
@@ -306,7 +302,7 @@ if(!base_calling_summary_file_input) {
 
     input:
     tuple val(datasetID), file(tofilter) from porechop_output
-    path summary from basecalling_summary_file_mix
+    path summary from basecalling_summary_file // params.basecalling_summary_file_mix
     
     output:
     tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_lcp, filtered_reads_lcp2, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap, filtered_reads_medaka2
@@ -325,6 +321,7 @@ filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; 
  * We use Canu to make high-quality concensus sequences from the filtered reads
 */
 process CanuCorrect {
+	errorStrategy 'ignore'
     publishDir "$results_path/canu"
     beforeScript 'chmod o+rw .'
 
@@ -352,7 +349,10 @@ process CanuCorrect {
  * Assemble corrected reads with Flye
  */
 process Flye {
-    errorStrategy 'ignore'
+    memory { 8.GB * task.attempt }
+    errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'ignore' }
+    maxRetries 3
+
     publishDir "$results_path/flye"
     beforeScript 'chmod o+rw .'
 
@@ -463,14 +463,22 @@ process AssessAssemblyApproach {
     myMiniasm = (!phased_assemblies.get(1)) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
     method = (!phased_assemblies.get(1)) ? "flye" : "miniasm"
 
-
-    """
-    if [ -f "${myFlye}" ]; then
-        cp ${myFlye} ${str_name}_${method}_assembly.fasta
+    shell:
+    '''
+    if  [ -f "!{myFlye}" ] &&  [ -f "!{myMiniasm}" ]; then 
+        flyesize="$(wc -c <"!{myFlye}")"
+	miniasmsize="$(wc -c <"!{myMiniasm}")"	
+	if [ flyesize > miniasmsize ]; then
+           cp !{myFlye} !{str_name}_!{method}_assembly.fasta
+   	else 
+           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
+    	fi
+    elif [ -f "!{myFlye}" ]; then
+        cp !{myFlye} !{str_name}_!{method}_assembly.fasta
     else 
-        cp ${myMiniasm} ${str_name}_${method}_assembly.fasta
+        cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
     fi
-    """
+    '''
 }
 
 /*
@@ -612,12 +620,12 @@ process LCPCorrection2 {
     
     output:
     set str_name, path("${str_name}_corrected.fasta") into lcp_corrected2
-    
+
     script:
     str_name = tuple_pack.get(0).get(0)
 
     """
-    python /plasmidseq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(1).get(1)} --output_fasta ${str_name}_corrected.fasta
+    /plasmidseq/dupscoop/target/release/dupscoop --ref ${tuple_pack.get(1).get(1)} --min 1000 -s 0.7 -o ${str_name}_corrected.fasta -d 20
     """
 }
 
