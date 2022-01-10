@@ -21,19 +21,6 @@ Channel.fromPath( params.samplesheet )
         .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
 
 
-// check if they've provided a previous basecalling results directory; if not, 
-// do the basecalling ahead of everything else
-basecalling_dir = file('nope')
-base_calling_summary_file_input = file('nope')
-do_base_calling = true    
-if (params.basecalling_location) {
-    do_base_calling = false
-    basecalling_dir = file(params.basecalling_location + "/pass/")
-    base_calling_summary_file_input = file(params.basecalling_location + "/sequencing_summary.txt")
-}
-log.info "basecalling  : " + do_base_calling
-log.info "basecalling dir  : " + basecalling_dir
-
 // check if they've asked for methylation calling, if not, set it to false
 if (!binding.hasVariable('params.methylation_calling')) {
     params.methylation_calling = false
@@ -103,8 +90,8 @@ process GuppyDemultiplex {
     path basecalled from basecalled_directory
 
     output:
-    path "saved_data/barcoding_summary.txt" into barcoding_split_summary   // the fastq output file path
-    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
+    path "saved_data/barcoding_summary.txt" into barcoding_split_summary_de_novo  // the fastq output file path
+    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_de_novo
     
     when:
     do_base_calling
@@ -139,7 +126,7 @@ process GuppyDemultiplexExisting {
     !do_base_calling
 
     input:
-    path basecalled from basecalling_dir
+    val basecalled from params.basecalling_dir
 
     output:
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
@@ -163,6 +150,9 @@ process GuppyDemultiplexExisting {
     chmod -R o+rw ./
     """
 }
+
+barcoding_split_summary = barcoding_split_summary_de_novo.mix(barcoding_split_summary_existing)
+fastq_gz_split_files = fastq_gz_split_files_de_novo.mix(fastq_gz_split_files_existing)
 
 /*
  * Run the pyco quality control step on the whole collection of reads from guppy
@@ -207,7 +197,7 @@ raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().
 
 // align the reads to the known reference for downstream QC 
 process AlignReadsPre {
-    publishDir "$results_path/minimap_initial"
+    publishDir "$results_path/read_alignment_to_known_map"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -265,7 +255,7 @@ raw_reads_for_lf_alignment = length_for_alignment.phase(sample_table_pre_lf)
 
 
 process AlignReadsPostLengthFilter {
-    publishDir "$results_path/minimap_length_filter"
+    publishDir "$results_path/read_alignment_of_filtered_reads_to_known_map"
         beforeScript 'chmod o+rw .'
 
     when:
@@ -297,7 +287,7 @@ process AlignReadsPostLengthFilter {
  * Filter reads by quality
  */
  process FilterReads {
-    publishDir "$results_path/filter_reads"
+    publishDir "$results_path/filtered_reads"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -322,7 +312,7 @@ filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; 
 */
 process CanuCorrect {
 	errorStrategy 'ignore'
-    publishDir "$results_path/canu"
+    publishDir "$results_path/canu_corrected_reads"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -351,9 +341,9 @@ process CanuCorrect {
 process Flye {
     memory { 8.GB * task.attempt }
     errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'ignore' }
-    maxRetries 3
+    maxRetries 1
 
-    publishDir "$results_path/flye"
+    publishDir "$results_path/flye_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -376,7 +366,7 @@ process Flye {
  * Assemble corrected reads with Miniasm 
  */
 process Miniasm {
-    publishDir "$results_path/miniasm"
+    publishDir "$results_path/miniasm_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -407,7 +397,7 @@ read_phased = canu_corrected_convert.phase(miniasm_overlaps)
  */
 process ConvertGraph {
     errorStrategy 'finish'
-    publishDir "$results_path/convert_graph"
+    publishDir "$results_path/miniasm_to_fasta"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -521,7 +511,7 @@ read_phased_flye_pol = filtered_reads_lcp.phase(flye_medPolish)
  */
 process LCPCorrectionFlye {
     errorStrategy 'finish'
-    publishDir "$results_path/lcp_flye"
+    publishDir "$results_path/duplicate_assembly_segment_removal_part1"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -551,7 +541,7 @@ read_phased_medaka2 = filtered_reads_medaka2.phase(lcp_corrected_flye)
  */
 process MedakaConsensusLCP {
     errorStrategy 'finish'
-    publishDir "$results_path/medaka_consensusLCP"
+    publishDir "$results_path/medaka_consensus_post_duplicate_removal"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -612,7 +602,7 @@ read_phased_nextpolish_for_nextpolish2 = filtered_reads_lcp2.phase(nextpolish_co
  */
 process LCPCorrection2 {
     errorStrategy 'finish'
-    publishDir "$results_path/lcp2"
+    publishDir "$results_path/duplicate_assembly_segment_removal_part2"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -677,7 +667,7 @@ read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
  */
 process Rotated {
     errorStrategy 'finish'
-    publishDir "$results_path/rotated"
+    publishDir "$results_path/assembly_rotated_to_match_map"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -704,7 +694,7 @@ methylation_reads_samples = methylation_reads.map { file -> tuple( (file.toStrin
  */
 process Fast5Subset {
     errorStrategy 'finish'
-    publishDir "$results_path/methylation"
+    publishDir "$results_path/methylation_subset_reads"
     beforeScript 'chmod o+rw .'
 
     when:
@@ -737,7 +727,7 @@ process OGMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
     beforeScript 'chmod o+rw .'
     errorStrategy 'finish'
-    publishDir "$results_path/methylation"
+    publishDir "$results_path/methylation_calling_modphred"
     maxForks 1
 
     when:
@@ -760,7 +750,7 @@ process OGMethylationCalling {
  */
 process ReferenceCopy {
     errorStrategy 'finish'
-    publishDir "$results_path/reference_copy"
+    publishDir "$results_path/assembly_result_with_sample_name"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -790,7 +780,7 @@ reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
  */
 
 process AlignReads {
-    publishDir "$results_path/minimap_final_porechop"
+    publishDir "$results_path/read_alignment_to_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -825,7 +815,7 @@ reference_and_reads_nanofilt.set{reference_and_reads_align_nanofilt}
  * QC process to check out how reads align after the nanofilter step
 */
 process AlignReadsNanofilter {
-    publishDir "$results_path/minimap_final_nanofilter"
+    publishDir "$results_path/read_alignment_of_filtered_reads_to_assembly"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -861,7 +851,7 @@ process AlignReadsNanofilter {
  * Run a script that checks how well our aligned BAM files do on a number of contamination metrics 
 */
 process AssessContamination {
-    publishDir "$results_path/contamination"
+    publishDir "$results_path/contamination_estimation"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -893,7 +883,7 @@ process AssessContamination {
  */
 process ContaminationAggregation {
     errorStrategy 'finish'
-    publishDir "$results_path/agg_contam"
+    publishDir "$results_path/aggregate_contamination"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -915,42 +905,11 @@ process ContaminationAggregation {
 }
 
 /*
- * Create an alignment of the reference and the known (provided) plasmid map
- */
-
-read_phased_for_alignment = rotated_reference_align.phase(sample_table_assessment2)
-
-process AlignReferences {
-    errorStrategy 'finish'
-    publishDir "$results_path/comparison_basic"
-    beforeScript 'chmod o+rw .'
-    
-    when:
-    params.quality_control_processes
-    
-    input:
-    val tuple_pack from read_phased_for_alignment
-    
-    output:
-    set sample_ID, path("${sample_ID}_aligned.fasta") into needleall_fasta
-    
-    script:
-    known_ref = tuple_pack.get(1).get(2)
-    sample_ID = tuple_pack.get(0).get(0)
-    assembled = tuple_pack.get(0).get(2)
-    """
-    cat ${known_ref} ${assembled} > full.fa
-
-    needleall -asequence ${known_ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample_ID}_aligned.fasta
-    """
-}
-
-/*
  * assess the map-reference alignment
  */
 process PlasmidComparison {
     errorStrategy 'finish'
-    publishDir "$results_path/plasmid_comp"
+    publishDir "$results_path/assess_assembly"
     beforeScript 'chmod o+rw .'
 
     when:
@@ -975,7 +934,7 @@ process PlasmidComparison {
  */
 process PlasmidComparisonCollection {
     errorStrategy 'finish'
-    publishDir "$results_path/plasmid_stat"
+    publishDir "$results_path/aggregate_assembly_assessment"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -1001,7 +960,7 @@ process PlasmidComparisonCollection {
  */
 process AnnotatePlasmid {
     errorStrategy 'finish'
-    publishDir "$results_path/annotated"
+    publishDir "$results_path/annotated_plasmid_assemblies"
     beforeScript 'chmod o+rw .'
     
     when:
