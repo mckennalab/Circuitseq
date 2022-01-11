@@ -39,6 +39,10 @@ if (!binding.hasVariable('params.annotate_plasmid')) {
 }
 log.info "Annotate plasmid output: " + params.annotate_plasmid
 
+if (!params.use_existing_basecalls) {
+   params.basecalling_dir = file('none')
+}
+
 println "Project : $workflow.projectDir"
 println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
 println "Cmd line: $workflow.commandLine"
@@ -60,8 +64,8 @@ process GuppyBaseCalling {
     path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
     when:
-    do_base_calling
-
+    !params.use_existing_basecalls
+    
     script:
         
     """
@@ -94,7 +98,7 @@ process GuppyDemultiplex {
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_de_novo
     
     when:
-    do_base_calling
+    !params.use_existing_basecalls
     
     script:
         
@@ -123,10 +127,10 @@ process GuppyDemultiplexExisting {
     publishDir "$results_path/guppy_demultiplex"
 
     when:
-    !do_base_calling
+    params.use_existing_basecalls
 
     input:
-    val basecalled from params.basecalling_dir
+    path basecalled from params.basecalling_dir
 
     output:
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
@@ -169,6 +173,8 @@ process pycoQC {
     path "pycoQC.html" into pycoQC_HTML
     
     when:
+    !params.use_existing_basecalls
+
     do_base_calling
     
     script:
