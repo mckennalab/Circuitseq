@@ -15,7 +15,7 @@ run_103 = run_103[run_103$assembly != "56_rotated.fasta",]
 run_103 = run_103[order(run_103$plasmid),]
 
 known_contamination_samples = run_103[run_103$plasmid >= 49 & run_103$plasmid <= 53,]
-known_contamination_samples$rates = c(0,5,15,30,70) # ,85) # ,95)
+known_contamination_samples$rates = c(0,5,15,30,70) # ,85) # ,95) # leave out the two plasmids, 0.85 and 0.95%, we failed to assemble
 
 cor(known_contamination_samples$contamination,known_contamination_samples$rates)
 rmse(known_contamination_samples$contamination,known_contamination_samples$rates)
@@ -27,8 +27,8 @@ g = ggplot(known_contamination_samples,aes(rates,contamination)) +
   ylab("Predicted contamination rate") +
   geom_smooth(method = "lm", se=TRUE, color="black", formula = y ~ x)
 
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.pdf",width=3,height=3)
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.png",width=3,height=3)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.pdf",width=2,height=3)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.png",width=2,height=3)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_10
 ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_103_contamination_assembly_2022_01_19.png",width=3,height=3)
 
 
-g = ggplot(full_94_103_run,aes(x=barcodes,y=contamination,fill=barcodes)) + geom_quasirandom(size=3,shape=21,stroke =1) +
+g = ggplot(full_94_103_run,aes(x=barcodes,y=contamination,fill=barcodes)) + geom_quasirandom(size=1,shape=21,stroke =0.3) +
   theme_classic() + 
   xlab("Value") + 
   scale_fill_manual(values = c("#0066ff","#ff5050"))
@@ -71,3 +71,16 @@ g = ggplot(full_94_103_run,aes(x=barcodes,y=contamination,fill=barcodes)) + geom
 ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/aggregate_contamination_2022_01_20.pdf",width=3,height=3)
 ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/aggregate_contamination_2022_01_20.png",width=3,height=3)
 
+# ------------------------------------------------------------------------------------------------------------
+# significance of our barcode improvement on contamination levels
+# ------------------------------------------------------------------------------------------------------------
+summary(aov(contamination ~ run, data = full_94_103_run))
+summary(aov(contamination ~ run, data = full_94_103_run[full_94_103_run$contamination < 30,]))
+
+
+# ------------------------------------------------------------------------------------------------------------
+# correlations between the contamination level and combined assembly issues
+# ------------------------------------------------------------------------------------------------------------
+cor(full_94_103_run$contamination, full_94_103_run$complete)
+cor(full_94_103_run[full_94_103_run$run == "10.3",]$contamination, full_94_103_run[full_94_103_run$run == "10.3",]$complete)
+cor(full_94_103_run[full_94_103_run$run == "9.4",]$contamination, full_94_103_run[full_94_103_run$run == "9.4",]$complete)
