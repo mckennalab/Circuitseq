@@ -27,8 +27,8 @@ g = ggplot(known_contamination_samples,aes(rates,contamination)) +
   ylab("Predicted contamination rate") +
   geom_smooth(method = "lm", se=TRUE, color="black", formula = y ~ x)
 
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.pdf",width=2,height=4)
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.png",width=2,height=4)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.pdf",width=3,height=3)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_contamination_experimental_2022_01_19.png",width=3,height=3)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -40,12 +40,15 @@ ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/known_cont
 contam = fread("/analysis/2021_08_26_PlasmidSeq_paper/scripts/contamination/9_4_v2_all.combinedd")
 contam$complete = (1.0 - abs(1.0 - contam$contiguity)) * (1.0 - abs(1.0 - contam$identity))
 contam$run = "9.4"
+contam$barcodes = "v2"
+
 
 run_103 = fread("/analysis/2021_08_26_PlasmidSeq_paper/scripts/contamination/10_3_all.combined",fill=TRUE)
 run_103 = run_103[run_103$plasmid < 49 | run_103$plasmid > 55,]
 
 run_103$complete = (1.0 - abs(1.0 - run_103$contiguity)) * (1.0 - abs(1.0 - run_103$identity))
 run_103$run = "10.3"
+run_103$barcodes = "v1"
 
 full_94_103_run = rbind(contam,run_103)
 
@@ -56,5 +59,15 @@ g = ggplot(full_94_103_run,aes(complete,contamination,fill=run)) + geom_point(co
   xlim(c(0.5,1)) + 
   ylim(c(0,50))  
 
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_103_contamination_assembly_2022_01_19.pdf",width=4,height=4)
-ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_103_contamination_assembly_2022_01_19.png",width=4,height=4)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_103_contamination_assembly_2022_01_19.pdf",width=3,height=3)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/real_94_103_contamination_assembly_2022_01_19.png",width=3,height=3)
+
+
+g = ggplot(full_94_103_run,aes(x=barcodes,y=contamination,fill=barcodes)) + geom_quasirandom(size=3,shape=21,stroke =1) +
+  theme_classic() + 
+  xlab("Value") + 
+  scale_fill_manual(values = c("#0066ff","#ff5050"))
+
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/aggregate_contamination_2022_01_20.pdf",width=3,height=3)
+ggsave(g,file="/analysis/2021_08_26_PlasmidSeq_paper/figures/figure_4/aggregate_contamination_2022_01_20.png",width=3,height=3)
+
