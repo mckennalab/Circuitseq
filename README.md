@@ -55,7 +55,7 @@ bash ./pipelines/runCircuitSet.sh
 
 ## Learn more / cite our publication
 
-For more information please refer to [our publication](https://www.biorxiv.org/content/10.1101/2022.01.25.477550v1). If you find this work useful please cite us: 
+For more information please refer to [our publication](https://www.biorxiv.org/content/10.1101/2022.01.25.477550v1). If you find this work useful, also consider citing our work: 
 
 ```
 @article {Emiliani2022.01.25.477550,
