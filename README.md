@@ -53,5 +53,21 @@ bash ./pipelines/runCircuitSet.sh
 - Cleaner packaging for AWS or other cloud computing platforms
 - Visualization of the final assemblies
 
-## Our publication
-For more information please refer to our publication (link). 
+## Learn more / cite our publication
+
+For more information please refer to [our publication](https://www.biorxiv.org/content/10.1101/2022.01.25.477550v1). If you find this work useful please cite us: 
+
+```
+@article {Emiliani2022.01.25.477550,
+	author = {Emiliani, Francesco E and Hsu, Ian and McKenna, Aaron},
+	title = {Circuit-seq: Circular reconstruction of cut in vitro transposed plasmids using Nanopore sequencing},
+	elocation-id = {2022.01.25.477550},
+	year = {2022},
+	doi = {10.1101/2022.01.25.477550},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {Recombinant DNA is a fundamental tool in biotechnology and medicine. Validation of the resulting plasmid sequence is a critical and time-consuming step, which has been dominated for the last 35 years by Sanger sequencing. As plasmid sequences grow more complex with new DNA synthesis and cloning techniques, we need new approaches that address the corresponding validation challenges at scale. Here we prototype a high-throughput plasmid sequencing approach using DNA transposition and Oxford Nanopore sequencing. Our method, Circuit-seq, creates robust, full-length, and accurate plasmid assemblies without prior knowledge of the underlying sequence for approximately $1.50 per plasmid. We demonstrate the power of Circuit-seq across a wide range of plasmid sizes and complexities, generating accurate and contiguous plasmid maps. We then leverage our long read-data to characterize epigenetic marks and estimate plasmid contamination levels. Circuit-seq scales to large numbers of samples at a lower cost than commercial Sanger sequencing, accelerating a key step in synthetic biology, with low startup costs make it practical for individual laboratories.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2022/01/26/2022.01.25.477550},
+	eprint = {https://www.biorxiv.org/content/early/2022/01/26/2022.01.25.477550.full.pdf},
+	journal = {bioRxiv}
+}
+```
