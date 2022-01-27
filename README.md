@@ -35,15 +35,14 @@ The tools used by Circuit-seq are often complex to install and have many depende
 
 - Clone the repository with ```git clone https://github.com/mckennalab/Circuitseq/``` in the directory where you wish to perform data analysis. 
 
-Prepare a samplesheet, an example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This has to be a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  These correspond to the number of the barcode (e.g 1-96), the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces), and optionally you can provide the location where the reference file, as a fasta, is located. This will allow the Circuit-seq pipeline to do quality assessment on the assembly. 
+- Prepare a samplesheet. An example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This is a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  
+  - `Position`: the number of the barcode (e.g 1-96) 
+  - `SampleID`: the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces)
+  - `Reference`: (optional) you can provide the location where the known fasta reference is located. This will allow the Circuit-seq pipeline to do quality assessment on the assembly
 
-Modify the corresponding run file found under the pipeline directory (`runCircuitSeq.sh`). Parameter information:
-```
-Gotta figure out what will be removed/added, thoughts: combine the files into one run file (runCircuitSeq.sh) that can change guppy model, medaka model, barcodes
+- Copy and modify the example run file found under the pipeline directory (`runCircuitSeq.sh`) to point to your fast5 location as well as other parameters that match you system.
 
-similar but different note, try to set it up so that if there is no fasta it uses a dummy pUC19 fasta reference 
-```
-Finally, once you have modified the files mentioned above, you can run the pipeline by running:
+- Finally, once you have modified the files mentioned above, you can run the pipeline by running:
 ```
 bash ./pipelines/runCircuitSet.sh
 ```
