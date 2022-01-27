@@ -9,14 +9,14 @@
 Things you'll need:
 
 - fast5 folder location from your Oxford Nanopore run
-- Docker setup with access for your username
+- Docker, configured with access for your username
 - Optionally a GPU, which speeds up basecalling and other steps
 
 The computational pipeline starts from a directory of raw Nanopore fast5 files. Circuit-seq uses the Nextflow pipeline engine to shuffle data through each step and output assemblies, plasmid assessments, and other information about each plasmid. First you'll need to have Nextflow installed:
 
 ### Install [Nextflow](https://www.nextflow.io/) using the commands below:
 
-- Check that you have hava 8 or later:
+- Check that you have have version 8 or later:
 ```java -version ```
 
 - download nextflow:
