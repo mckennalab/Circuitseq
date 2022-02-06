@@ -27,9 +27,9 @@ The computational pipeline starts from a directory of raw Nanopore fast5 files. 
 
 If you have issues, [Nextflow](https://www.nextflow.io/) has great community resources linked from their website.
 
-### Docker setup
+### Singularity setup
 
-The tools used by Circuit-seq are often complex to install and have many dependencies. To make this easier we've packaged all the tools into a single [Docker container](https://hub.docker.com/repository/docker/aaronmck/plasmidassembly). *You'll need to have Docker running on the system you want to run Circuit-seq*. Unfortunately running Docker on some HPC nodes requires permissions which you may have to set up with your institution. We're also working on testing support for [Singularity](https://sylabs.io/guides/3.5/user-guide/introduction.html) which is generally easier to run on distributed systems. 
+The tools used by Circuit-seq are often complex to install and have many dependencies. To make this easier we've packaged all the tools into a single [Docker container](https://hub.docker.com/repository/docker/aaronmck/plasmidassembly) which can be used by either the Singularity or Docker container engines. *You'll need to have either Singularity (with [user control of binds](https://singularity-admindoc.readthedocs.io/en/latest/the_singularity_config_file.html#user-bind-control-boolean-default-yes) or Docker running on the system you want to run Circuit-seq*. Unfortunately running Docker on some HPC nodes requires permissions which you may have to set up with your institution; Singularity is generally a better option on shared systems.
 
 ### Setup Circuit-seq
 
