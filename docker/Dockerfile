@@ -28,12 +28,16 @@ RUN pip install pycoqc
 # ################################################
 
 RUN apt-get update
-RUN apt-get install wget lsb-release
-RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add -
-RUN echo "deb http://mirror.oxfordnanoportal.com/apt focal-stable non-free" |  tee /etc/apt/sources.list.d/nanoporetech.sources.list
-RUN apt-get update
-RUN apt update
-RUN apt install -y ont-guppy
+RUN apt-get install -y wget lsb-release tar
+#RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add -
+#RUN echo "deb http://mirror.oxfordnanoportal.com/apt focal-stable non-free" |  tee /etc/apt/sources.list.d/nanoporetech.sources.list
+#RUN apt-get update
+#RUN apt update
+#RUN apt install -y ont-guppy
+RUN cd /ont/ && wget -O /ont/ont-guppy_5.0.16_linux64.tar.gz https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_5.0.16_linux64.tar.gz
+RUN cd /ont/ && ls
+RUN cd /ont/ && tar xf /ont/ont-guppy_5.0.16_linux64.tar.gz
+ENV PATH="/ont/ont-guppy/bin/:${PATH}"
 
 # Add Rerio models
 # ################################################
@@ -125,30 +129,30 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 # cp the github pipeline files 
 # ################################################
 RUN mkdir /plasmidseq/
-RUN --mount=type=secret,id=mysecret git clone https://aaronmck:$(cat /run/secrets/mysecret)@github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+RUN git clone https://github.com/mckennalab/PlasmidSeq.git /plasmidseq/
 
 
 ## setup the annotation tool
 RUN pip install typing-extensions==3.10.0.0
-RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
-    cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
-RUN wget https://github.com/barricklab/pLannotate/releases/download/v1.0.3/BLAST_dbs.tar.gz -O /plasmidseq/pLannotate/BLAST_dbs.tar.gz && \
-    cd /plasmidseq/pLannotate/ && tar -xzf BLAST_dbs.tar.gz
+#RUN wget https://github.com/barricklab/pLannotate/archive/refs/tags/v1.0.3.tar.gz -O /plasmidseq/v1.0.3.tar.gz && \
+#    cd /plasmidseq/ && tar -xzf v1.0.3.tar.gz && mv pLannotate-1.0.3 pLannotate && cd pLannotate && python setup.py install
+#RUN wget https://github.com/barricklab/pLannotate/releases/download/v1.0.3/BLAST_dbs.tar.gz -O /plasmidseq/pLannotate/BLAST_dbs.tar.gz && \
+#    cd /plasmidseq/pLannotate/ && tar -xzf BLAST_dbs.tar.gz
 
-RUN wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz -O /plasmidseq/ncbi-blast-2.12.0+-x64-linux.tar.gz && \
-    cd /plasmidseq/ && tar xf ncbi-blast-2.12.0+-x64-linux.tar.gz
+#RUN wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz -O /plasmidseq/ncbi-blast-2.12.0+-x64-linux.tar.gz && \
+#    cd /plasmidseq/ && tar xf ncbi-blast-2.12.0+-x64-linux.tar.gz
     
-ENV PATH="/plasmidseq/ncbi-blast-2.12.0+/bin/:${PATH}"
+#ENV PATH="/plasmidseq/ncbi-blast-2.12.0+/bin/:${PATH}"
 
 RUN apt install infernal
 
-RUN mkdir /plasmidseq/diamond
+#RUN mkdir /plasmidseq/diamond
 
-RUN wget http://github.com/bbuchfink/diamond/releases/download/v2.0.12/diamond-linux64.tar.gz -O /plasmidseq/diamond/diamond-linux64.tar.gz
+#RUN wget http://github.com/bbuchfink/diamond/releases/download/v2.0.12/diamond-linux64.tar.gz -O /plasmidseq/diamond/diamond-linux64.tar.gz
 
-RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz 
+#RUN cd /plasmidseq/diamond/ && tar xf diamond-linux64.tar.gz 
 
-ENV PATH="/plasmidseq/diamond/:${PATH}"
+#ENV PATH="/plasmidseq/diamond/:${PATH}"
 
 # add Flye to the docker container
 RUN wget https://github.com/fenderglass/Flye/archive/refs/tags/2.9.tar.gz -O /plasmidseq/Flye-2.9.tar.gz && cd /plasmidseq/ && tar xf Flye-2.9.tar.gz && cd /plasmidseq/Flye-2.9 && make
@@ -162,3 +166,5 @@ RUN git clone https://github.com/mckennalab/DupScoop.git /plasmidseq/dupscoop/
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN cd /plasmidseq/dupscoop/ && cargo build --release
+
+RUN pip install numpy==1.19.5
