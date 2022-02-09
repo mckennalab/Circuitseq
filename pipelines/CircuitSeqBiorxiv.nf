@@ -10,15 +10,15 @@
 
 input_fastq5_path  = Channel.fromPath(params.fast5).first()
 results_path       = "results"
-mix_in_rate = 0.19845440202552694
+mix_in_rate = 0.19845440202552694 // our current emp. estimate from the Addgene simulations
+
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
-
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
-        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
-        .into{sample_table; sample_table_assessment; sample_table_assessment2; sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation}
+        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference) ) }
+        .into{sample_table; sample_table_assessment; sample_table_pre_merge;  sample_table_pre_lf}
 
 
 // check if they've asked for methylation calling, if not, set it to false
@@ -32,12 +32,6 @@ if (!binding.hasVariable('params.quality_control_processes')) {
     params.quality_control_processes = false
 }
 log.info "Quality control output: " + params.quality_control_processes
-
-// check if they've asked to annotate the resulting plasmid maps
-if (!binding.hasVariable('params.annotate_plasmid')) {
-    params.annotate_plasmid = false
-}
-log.info "Annotate plasmid output: " + params.annotate_plasmid
 
 if (!params.use_existing_basecalls) {
    params.basecalling_dir = file('none')
@@ -207,7 +201,7 @@ process AlignReadsPre {
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple reads,reference from raw_reads_for_alignment // reads and reference 
+    tuple reads,reference from raw_reads_for_alignment.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
 
     when:
     params.quality_control_processes
@@ -268,7 +262,7 @@ process AlignReadsPostLengthFilter {
     params.quality_control_processes
 
     input:
-        tuple reads,reference from raw_reads_for_lf_alignment // reads and reference
+        tuple reads,reference from raw_reads_for_lf_alignment.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
 
     output:
         tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
@@ -301,7 +295,7 @@ process AlignReadsPostLengthFilter {
     path summary from basecalling_summary_file // params.basecalling_summary_file_mix
     
     output:
-    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_lcp, filtered_reads_rotate, filtered_reads_medaka, filtered_reads_medaka2, filtered_reads_medaka3, filtered_reads_medaka4, filtered_reads_minimap 
+    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_lcp, filtered_reads_rotate, filtered_reads_medaka, filtered_reads_medakaLCP, filtered_reads_medaka3, filtered_reads_medaka4, filtered_reads_minimap 
 
     script:
         
@@ -482,24 +476,6 @@ process AssessAssemblyApproach {
 }
 
 /*
-*old code just in case
-    if  [ -f "!{myFlye}" ] &&  [ -f "!{myMiniasm}" ]; then 
-        flyesize="$(wc -c <"!{myFlye}")"
-	miniasmsize="$(wc -c <"!{myMiniasm}")"	
-	if [ flyesize > miniasmsize ]; then
-           cp !{myFlye} !{str_name}_!{method}_assembly.fasta
-   	else 
-           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
-    	fi
-    elif [ -f "!{myFlye}" ]; then
-        cp !{myFlye} !{str_name}_!{method}_assembly.fasta
-    else 
-        cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
-    fi
-*/
-
-
-/*
  * polish the flye assemblies with medaka 
 */
 read_phased_medaka = filtered_reads_medaka.phase(fasta_graph)
@@ -594,7 +570,7 @@ process Rotate {
 /*
  * polish the flye assemblies with medaka 
 */
-read_phased_medaka2 = filtered_reads_medaka2.phase(LCP_rotated)
+read_phased_medaka2 = filtered_reads_medakaLCP.phase(LCP_rotated)
 
 /*
  * perform a Medaka Consensus of the reference
@@ -608,7 +584,7 @@ process MedakaConsensusLCP {
     val tuple_pack from read_phased_medaka2.filter{ it.get(1).get(1).countFasta()>=1} 
     
     output:
-    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus2
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensusLCP
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -622,12 +598,12 @@ process MedakaConsensusLCP {
 /*
  * repolish the flye assemblies with medaka 
 */
-read_phased_medaka3 = filtered_reads_medaka3.phase(medaka_consensus2)
+read_phased_medaka3 = filtered_reads_medaka3.phase(medaka_consensusLCP)
 
 /*
  * perform a Medaka Consensus of the reference
  */
-process MedakaPolish3 {
+process MedakaPolish {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus3"
     beforeScript 'chmod o+rw .'
@@ -636,7 +612,7 @@ process MedakaPolish3 {
     val tuple_pack from read_phased_medaka3.filter{ it.get(1).get(1).countFasta()>=1} 
     
     output:
-    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus3
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -650,21 +626,21 @@ process MedakaPolish3 {
 /*
  * repolish the flye assemblies with medaka 
 */
-read_phased_medaka4 = filtered_reads_medaka4.phase(medaka_consensus3)
+read_phased_medaka2 = filtered_reads_medaka4.phase(medaka_consensus)
 
 /*
  * perform a Medaka Consensus of the reference
  */
-process MedakaPolish4 {
+process MedakaPolish2 {
     errorStrategy 'finish'
     publishDir "$results_path/medaka_consensus4"
     beforeScript 'chmod o+rw .'
 
     input:
-    val tuple_pack from read_phased_medaka4.filter{ it.get(1).get(1).countFasta()>=1} 
+    val tuple_pack from read_phased_medaka2.filter{ it.get(1).get(1).countFasta()>=1} 
     
     output:
-    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus4
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus2, medaka2_reference_minimap, medaka2_reference_minimap2, medaka2_reference_methyl
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -678,33 +654,8 @@ process MedakaPolish4 {
 /*
  * phase the polished assembly to our sample information, and make two copies
  */
-medaka_consensus2_for_assessment = medaka_consensus4.phase(sample_table)
-medaka_consensus2_for_assessment.into{medaka_consensus2_for_copy; medaka_consensus2_for_phasing} 
-
-/*
- * phase it to work with downstream steps
- */
-
-process PhaseCorrectly {
-    errorStrategy 'finish'
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from  medaka_consensus2_for_phasing
-
-    output:
-    set str_name, path("${str_name}_phased.fasta"), path("${str_name}_phased_reference.fasta")  into medaka2_consensus_eval, medaka2_reference_minimap, medaka2_reference_minimap2, medaka2_reference_methyl
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    cp  ${tuple_pack.get(0).get(1)}  ${str_name}_phased.fasta   
-    cp  ${tuple_pack.get(1).get(2)}  ${str_name}_phased_reference.fasta
-    """
-}
-
-
+medaka_consensus2_for_assessment = medaka_consensus2.phase(sample_table)
+medaka_consensus2_for_assessment.into{medaka2_consensus_eval; medaka_consensus2_for_copy} 
 
 /*
  * take the orginal barcode split reads and extract a sample name for methylation analysis
@@ -794,8 +745,7 @@ process ReferenceCopy {
 /*
  * Create an alignment of the reads to the final reference using minimap
  */
-reference_and_reads = porechop_output_for_minimap.phase(medaka2_reference_minimap)
-reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
+reference_and_reads_align = porechop_output_for_minimap.phase(medaka2_reference_minimap)
 
 /*
  * Align the original reads back to the resulting assembled reference 
@@ -831,8 +781,7 @@ process AlignReads {
     """
 }
 
-reference_and_reads_nanofilt = filtered_reads_minimap.phase(medaka2_reference_minimap2)
-reference_and_reads_nanofilt.set{reference_and_reads_align_nanofilt}
+reference_and_reads_align_nanofilt = filtered_reads_minimap.phase(medaka2_reference_minimap2)
 /*
  * QC process to check out how reads align after the nanofilter step
 */
@@ -938,15 +887,15 @@ process PlasmidComparison {
     params.quality_control_processes
 
     input:
-    tuple sample, assembled, ref from medaka2_consensus_eval
+    val tuple_pack from medaka2_consensus_eval.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
     
     output:
-    path("${sample}_nextpolish2.stats") into plasmid_comp
+    path("${tuple_pack.get(0).get(0)}_nextpolish2.stats") into plasmid_comp
     
     script:
 
     """
-    assess_assembly.py ${assembled} ${ref} --mode replicon > ${sample}_nextpolish2.stats
+    assess_assembly.py ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(2)} --mode replicon > ${tuple_pack.get(0).get(0)}_nextpolish2.stats
     """
 }
 
@@ -973,32 +922,5 @@ process PlasmidComparisonCollection {
     """
     echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
     cat header.txt ${stats.collect().join(" ")} > all_nextpolish2.stats
-    """
-}
-
-
-/*
- * aggregate all the plasmid comparisons into a single file
- */
-process AnnotatePlasmid {
-    errorStrategy 'finish'
-    publishDir "$results_path/annotated_plasmid_assemblies"
-    beforeScript 'chmod o+rw .'
-    
-    when:
-    params.annotate_plasmid
-
-    input:
-    tuple name,reference from sample_copy.filter(){ it.get(1).countFasta() == 1}
-    
-    output:
-    path("${name}_annotations") into annotation_dir
-    
-    script:
-
-    """
-    mkdir ${name}_annotations 
-    plannotate batch -i ${reference} -o ${name}_annotations -f ${name} -b /plasmidseq/pLannotate/BLAST_dbs/
-
     """
 }
