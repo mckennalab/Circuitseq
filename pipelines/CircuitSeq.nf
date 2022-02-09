@@ -10,15 +10,16 @@
 
 input_fastq5_path  = Channel.fromPath(params.fast5).first()
 results_path       = "results"
-mix_in_rate = 0.19845440202552694
+mix_in_rate = 0.19845440202552694 // our current emp. estimate from the Addgene simulations
+
 /*
  * Read in the sample table and convert entries into a channel of sample information 
  */
-
 Channel.fromPath( params.samplesheet )
         .splitCsv(header: true, sep: '\t')
-        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference), it.sangers ) }
-        .into{sample_table; sample_table_assessment; sample_table_assessment2;  sample_table_pre_merge;  sample_table_pre_lf; sample_table_pre_polish; sample_table_methylation; sample_table_flye}
+        .map{ tuple(it.position.padLeft(2,'0'), it.sample, file(it.reference) ) }
+        .into{sample_table; sample_table_assessment; sample_table_pre_merge;  sample_table_pre_lf}
+
 
 // check if they've asked for methylation calling, if not, set it to false
 if (!binding.hasVariable('params.methylation_calling')) {
@@ -32,16 +33,14 @@ if (!binding.hasVariable('params.quality_control_processes')) {
 }
 log.info "Quality control output: " + params.quality_control_processes
 
-// check if they've asked to annotate the resulting plasmid maps
-if (!binding.hasVariable('params.annotate_plasmid')) {
-    params.annotate_plasmid = false
+if (!params.use_existing_basecalls) {
+   params.basecalling_dir = file('none')
 }
-log.info "Annotate plasmid output: " + params.annotate_plasmid
+
 println "Project : $workflow.projectDir"
 println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
 println "Cmd line: $workflow.commandLine"
 println "Manifest's pipeline version: $workflow.manifest.version"
-
 
 /*
  * Initial basecalling of all reads using Guppy -- this is the most computationally costly step
@@ -59,8 +58,8 @@ process GuppyBaseCalling {
     path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
     when:
-    !params.basecalling_dir
-
+    !params.use_existing_basecalls
+    
     script:
         
     """
@@ -89,11 +88,11 @@ process GuppyDemultiplex {
     path basecalled from basecalled_directory
 
     output:
-    path "saved_data/barcoding_summary.txt" into barcoding_split_summary   // the fastq output file path
-    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files
+    path "saved_data/barcoding_summary.txt" into barcoding_split_summary_de_novo  // the fastq output file path
+    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_de_novo
     
     when:
-    !params.basecalling_dir
+    !params.use_existing_basecalls
     
     script:
         
@@ -121,6 +120,9 @@ process GuppyDemultiplexExisting {
     beforeScript 'chmod o+rw .'
     publishDir "$results_path/guppy_demultiplex"
 
+    when:
+    params.use_existing_basecalls
+
     input:
     path basecalled from params.basecalling_dir
 
@@ -128,8 +130,6 @@ process GuppyDemultiplexExisting {
     path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
     
-    when:
-    params.basecalling_dir
     
     script:
         
@@ -149,6 +149,9 @@ process GuppyDemultiplexExisting {
     """
 }
 
+barcoding_split_summary = barcoding_split_summary_de_novo.mix(barcoding_split_summary_existing)
+fastq_gz_split_files = fastq_gz_split_files_de_novo.mix(fastq_gz_split_files_existing)
+
 /*
  * Run the pyco quality control step on the whole collection of reads from guppy
  */
@@ -158,13 +161,15 @@ process pycoQC {
 
     input:
     path basecalling_summary from basecalling_summary_for_pyco
-    path barcode_summary from barcoding_split_summary_existing
+    path barcode_summary from barcoding_split_summary
 
     output:
     path "pycoQC.html" into pycoQC_HTML
     
     when:
-    !params.basecalling_dir
+    !params.use_existing_basecalls
+
+    do_base_calling
     
     script:
         
@@ -181,7 +186,8 @@ process pycoQC {
 /*
  * Take the channel of sample-split reads and send them into multiple downstream channels
  */
-fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}).into{     guppy_demulti; 
+fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}.mix(fastq_gz_split_files_existing.flatten().filter(){ it.countFastq() > 1 && !(it.getParent().contains("unclassified"))}).into{
+    guppy_demulti;
     methylation_reads; 
     guppy_alignment; 
 }
@@ -191,11 +197,11 @@ raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().
 
 // align the reads to the known reference for downstream QC 
 process AlignReadsPre {
-    publishDir "$results_path/minimap_initial"
+    publishDir "$results_path/read_alignment_to_known_map"
     beforeScript 'chmod o+rw .'
 
     input:
-    tuple reads,reference from raw_reads_for_alignment // reads and reference 
+    tuple reads,reference from raw_reads_for_alignment.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
 
     when:
     params.quality_control_processes
@@ -249,14 +255,14 @@ raw_reads_for_lf_alignment = length_for_alignment.phase(sample_table_pre_lf)
 
 
 process AlignReadsPostLengthFilter {
-    publishDir "$results_path/minimap_length_filter"
+    publishDir "$results_path/read_alignment_of_filtered_reads_to_known_map"
         beforeScript 'chmod o+rw .'
 
     when:
     params.quality_control_processes
 
     input:
-        tuple reads,reference from raw_reads_for_lf_alignment // reads and reference
+        tuple reads,reference from raw_reads_for_lf_alignment.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
 
     output:
         tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
@@ -272,27 +278,24 @@ process AlignReadsPostLengthFilter {
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
     minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
     samtools index ${str_name}_sorted_post_lf_reads.bam
-    """
+     """
     }
 
-if(!params.base_calling_summary_file) {
-    basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first()
-} else {
-    basecalling_summary_file_mix = Channel.fromPath(params.base_calling_summary_file).first()
-}
+//basecalling_summary_file_mix = Channel.fromPath(basecalling_summary_file).first().mix(Channel.fromPath(base_calling_summary_file_input).first())
+
 /*
  * Filter reads by quality
  */
  process FilterReads {
-    publishDir "$results_path/filter_reads"
+    publishDir "$results_path/filtered_reads"
     beforeScript 'chmod o+rw .'
 
     input:
     tuple val(datasetID), file(tofilter) from porechop_output
-    path summary from basecalling_summary_file_mix
+    path summary from basecalling_summary_file // params.basecalling_summary_file_mix
     
     output:
-    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_racon, filtered_reads_racon2, filtered_reads_racon3, filtered_reads_medaka, filtered_reads_nextpolish, filtered_reads_nextpolish2, filtered_reads_minimap
+    tuple val(datasetID), file("${datasetID}_filtered.fq.gz") into filtered_reads, filtered_reads_lcp, filtered_reads_rotate, filtered_reads_medaka, filtered_reads_medakaLCP, filtered_reads_medaka3, filtered_reads_medaka4, filtered_reads_minimap 
 
     script:
         
@@ -308,7 +311,8 @@ filtered_reads.filter(){ it.get(1).countFastq() > 4}.into{ filtered_reads_canu; 
  * We use Canu to make high-quality concensus sequences from the filtered reads
 */
 process CanuCorrect {
-    publishDir "$results_path/canu"
+	errorStrategy 'ignore'
+    publishDir "$results_path/canu_corrected_reads"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -325,7 +329,7 @@ process CanuCorrect {
     canu -correct \
      -p reads -d ${datasetID}_canu_correct \
      genomeSize=8k \
-     corOutCoverage=200 \
+     corOutCoverage=150 \
      stopOnLowCoverage=2 minInputCoverage=2 \
      -nanopore ${to_correct} 
     """
@@ -335,7 +339,11 @@ process CanuCorrect {
  * Assemble corrected reads with Flye
  */
 process Flye {
-    publishDir "$results_path/flye"
+    memory { 8.GB * task.attempt }
+    errorStrategy  { task.attempt <= maxRetries  ? 'retry' : 'ignore' }
+    maxRetries 1
+
+    publishDir "$results_path/flye_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -346,10 +354,10 @@ process Flye {
     
     script:
     """
-    flye -g 10k --nano-corr \
-         ${corrected_reads} \
+    flye --nano-corr ${corrected_reads} \
          -o ${datasetID}_assembly \
-         --min-overlap 1000 -t 8
+         -g 10k -m 1000 -t 32
+
 
     """
 }
@@ -358,7 +366,7 @@ process Flye {
  * Assemble corrected reads with Miniasm 
  */
 process Miniasm {
-    publishDir "$results_path/miniasm"
+    publishDir "$results_path/miniasm_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -389,7 +397,7 @@ read_phased = canu_corrected_convert.phase(miniasm_overlaps)
  */
 process ConvertGraph {
     errorStrategy 'finish'
-    publishDir "$results_path/convert_graph"
+    publishDir "$results_path/miniasm_to_fasta"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -419,8 +427,6 @@ process ConvertGraph {
         output.close()
     /$
 }
-
-
 /*
  * We need to 'phase', or line-up, the corrected reads with their assembly results
  */
@@ -430,7 +436,7 @@ assembly_phase = flye_assembly.phase(miniasm_assembly, remainder: true)
  * Check for any really poor quality assemblies
  */
 process AssessAssemblyApproach {
-    errorStrategy 'finish'
+    errorStrategy 'ignore'
     publishDir "$results_path/assembly_choice"
     beforeScript 'chmod o+rw .'
 
@@ -442,123 +448,37 @@ process AssessAssemblyApproach {
 
     script:
 
-    str_name = phased_assemblies.get(0).get(0)
-    myFlye = (phased_assemblies.get(0) == null) ? 'mydefaultvalue' : phased_assemblies.get(0).get(1)
-    myMiniasm = (phased_assemblies.get(1) == null) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
-    method = (phased_assemblies.get(1) == null) ? "flye" : "miniasm"
-    """
-    if [ -f "${myMiniasm}" ]; then
-        cp ${myMiniasm} ${str_name}_${method}_assembly.fasta
+    str_name = (!phased_assemblies.get(0)) ? phased_assemblies.get(1).get(0) : phased_assemblies.get(0).get(0)
+    myFlye = (!phased_assemblies.get(0)) ? 'mydefaultvalue' : phased_assemblies.get(0).get(1)
+    myMiniasm = (!phased_assemblies.get(1)) ? 'mydefaultvalue' : phased_assemblies.get(1).get(1)
+    method = (!phased_assemblies.get(1)) ? "flye" : "miniasm"
+
+    shell:
+    '''
+    if  [ -f "!{myFlye}" ] &&  [ -f "!{myMiniasm}" ]; then 
+        flyesize="$(wc -c <"!{myFlye}")"
+        flyecount="$(cat "!{myFlye}" | grep ">" | wc -l)"
+	    miniasmsize="$(wc -c <"!{myMiniasm}")"	
+	if [ flyecount > 1 ]; then
+           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta  
+    
+    elif [ flyesize > miniasmsize ]; then
+           cp !{myFlye} !{str_name}_!{method}_assembly.fasta
+   	else 
+           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
+    	fi
+    elif [ -f "!{myFlye}" ]; then
+        cp !{myFlye} !{str_name}_!{method}_assembly.fasta
     else 
-        cp ${myFlye} ${str_name}_${method}_assembly.fasta
+        cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
     fi
-    """
-}
-
-
-/*
- * phase the reads to the filtered assembly from the last step
- */
-read_phased_racon = filtered_reads_racon.phase(fasta_graph)
-
-/*
- * Perform the first round of polishing with Racon
- *
- * TODO: install racon the right way
- */
-process RaconPolish {
-    errorStrategy 'finish'
-    publishDir "$results_path/racon_polish"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from read_phased_racon.filter{ it.get(1).get(1).countFasta()>=1} 
-
-    
-    output:
-    tuple str_name, path("${str_name}_racon1.fasta") into racon_corrected
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
-
-    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon1.fasta
-    """
-}
-
-
-/*
- * phase the racon corrected reference to the reads again
- */
-read_phased_racon2 = filtered_reads_racon2.phase(racon_corrected)
-
-/*
- * Racon polish again
- *
- * TODO: install racon the right way
- *
- */
-process RaconPolish2 {
-    errorStrategy 'finish'
-    publishDir "$results_path/racon_polish"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from read_phased_racon2.filter{ it.get(1).get(1).countFasta()>=1} 
-
-    
-    output:
-    tuple str_name, path("${str_name}_racon2.fasta") into racon_corrected2
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
-
-    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon2.fasta
-    """
+    '''
 }
 
 /*
- * again, phase the racon corrected reference to the reads
- */
-read_phased_racon3 = filtered_reads_racon3.phase(racon_corrected2)
-
-/*
- * Racon polish again
- *
- * TODO: install racon the right way
- *
- */
-process RaconPolish3 {
-    errorStrategy 'finish'
-    publishDir "$results_path/racon_polish"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from read_phased_racon3.filter{ it.get(1).get(1).countFasta()>=1} 
-
-    
-    output:
-    tuple str_name, path("${str_name}_racon3.fasta") into racon_corrected3
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    minimap2 -ax map-ont ${tuple_pack.get(1).get(1)} ${tuple_pack.get(0).get(1)} > ${tuple_pack.get(0).get(0)}_mapping.sam
-
-    racon -u -m 8 -x -6 -g -8 -w 500 -t 1 ${tuple_pack.get(0).get(1)} ${tuple_pack.get(0).get(0)}_mapping.sam ${tuple_pack.get(1).get(1)} > ${tuple_pack.get(0).get(0)}_racon3.fasta
-    """
-}
-
-/*
- * our last phase of the polished, racon corrected reference to the reads 
- */
-read_phased_medaka = filtered_reads_medaka.phase(racon_corrected3)
+ * polish the flye assemblies with medaka 
+*/
+read_phased_medaka = filtered_reads_medaka.phase(fasta_graph)
 
 /*
  * perform a Medaka Consensus of the reference
@@ -572,7 +492,99 @@ process MedakaConsensus {
     val tuple_pack from read_phased_medaka.filter{ it.get(1).get(1).countFasta()>=1} 
     
     output:
-    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into racon_medaka_consensus, racon_medaka_consensus_mars
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into flye_medPolish
+    
+    script:
+    str_name = tuple_pack.get(0).get(0)
+    """
+    chmod -R a+rw ./
+    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    chmod -R a+rw ./
+    """
+}
+
+
+/*
+ * polish the flye assemblies with medaka 
+ */
+
+read_phased_flye_pol = filtered_reads_lcp.phase(flye_medPolish)
+
+/*
+ * try to address issues with large duplicated segments in the resulting plasmids
+ */
+process LCPCorrectionFlye {
+    errorStrategy 'finish'
+    publishDir "$results_path/duplicate_assembly_segment_removal_part1"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    val tuple_pack from read_phased_flye_pol
+    
+    output:
+    set str_name, path("${str_name}_corrected.fasta") into lcp_corrected_flye
+    
+    script:
+    str_name = tuple_pack.get(0).get(0)
+
+    """
+    /plasmidseq/dupscoop/target/release/dupscoop --ref ${tuple_pack.get(1).get(1)} --min 500 -s 0.7 -o ${str_name}_corrected.fasta -d 20
+
+    """
+}
+
+
+/*
+ * rotate the assemblies for better polishing
+*/
+read_phased_rotate = filtered_reads_rotate.phase(lcp_corrected_flye)
+
+/*
+ * rotate assemblies by half 
+ */
+process Rotate {
+    errorStrategy 'finish'
+    publishDir "$results_path/rotated_post_lcp"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    val tuple_pack from read_phased_rotate.filter{ it.get(1).get(1).countFasta()>=1} 
+    
+    output:
+    set str_name, file("${tuple_pack.get(0).get(0)}_rotated.fasta") into LCP_rotated 
+
+    script:
+    str_name = tuple_pack.get(0).get(0)
+    """
+
+    chmod -R a+rw ./
+    cat ${tuple_pack.get(1).get(1)} | sed -n '1p' >>  ${str_name}_rotated.fasta
+    
+    var="\$(cat ${tuple_pack.get(1).get(1)} | sed -n '2p')" 
+    printf '%s\\n' "\${var:0:\${#var}/2}\${var:\${#var}/2}" >> ${str_name}_rotated.fasta
+
+    chmod -R a+rw ./
+    """
+}
+
+/*
+ * polish the flye assemblies with medaka 
+*/
+read_phased_medaka2 = filtered_reads_medakaLCP.phase(LCP_rotated)
+
+/*
+ * perform a Medaka Consensus of the reference
+ */
+process MedakaConsensusLCP {
+    errorStrategy 'finish'
+    publishDir "$results_path/medaka_consensus_post_duplicate_removal"
+    beforeScript 'chmod o+rw .'
+
+    input:
+    val tuple_pack from read_phased_medaka2.filter{ it.get(1).get(1).countFasta()>=1} 
+    
+    output:
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensusLCP
     
     script:
     str_name = tuple_pack.get(0).get(0)
@@ -584,148 +596,66 @@ process MedakaConsensus {
 }
 
 /*
- * phase our nextpolish reads to the medaka consensus
- */
-read_phased_medaka_for_nextpolish = filtered_reads_nextpolish.phase(racon_medaka_consensus)
+ * repolish the flye assemblies with medaka 
+*/
+read_phased_medaka3 = filtered_reads_medaka3.phase(medaka_consensusLCP)
 
 /*
- * develop a nextpolish consensus
+ * perform a Medaka Consensus of the reference
  */
-process NextPolish {
+process MedakaPolish {
     errorStrategy 'finish'
-    publishDir "$results_path/nextpolish"
+    publishDir "$results_path/medaka_consensus3"
     beforeScript 'chmod o+rw .'
 
     input:
-    val tuple_pack from read_phased_medaka_for_nextpolish.filter{ it.get(1).get(1).countFasta()>=1} 
-    path config from params.nextpolish_cfg
-    output:
+    val tuple_pack from read_phased_medaka3.filter{ it.get(1).get(1).countFasta()>=1} 
     
-    set datasetID, file("${datasetID}.nextpolish.fasta") into nextpolish_consensus, nextpolish_consensus_assessment
-    set datasetID, file("${datasetID}.nextpolish.fasta.stat") into nextpolish_consensus_stat, nextpolish_consensus_assessment_stat
+    output:
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus
     
     script:
-    datasetID = tuple_pack.get(0).get(0)
-
+    str_name = tuple_pack.get(0).get(0)
     """
-    cp ${tuple_pack.get(1).get(1)} consensus.fasta
-    echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextPolish ${config}
-    cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish.fasta
-    cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish.fasta.stat
+    chmod -R a+rw ./
+    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    chmod -R a+rw ./
     """
 }
 
 /*
- * phase reads to the polished reference
- */
-read_phased_nextpolish_for_nextpolish2 = filtered_reads_nextpolish2.phase(nextpolish_consensus)
+ * repolish the flye assemblies with medaka 
+*/
+read_phased_medaka2 = filtered_reads_medaka4.phase(medaka_consensus)
 
 /*
- * Polish the reference again with Nextpolish
+ * perform a Medaka Consensus of the reference
  */
-process NextPolish2CommaThePolishing {
+process MedakaPolish2 {
     errorStrategy 'finish'
-    publishDir "$results_path/nextpolish2"
+    publishDir "$results_path/medaka_consensus4"
     beforeScript 'chmod o+rw .'
 
     input:
-    val tuple_pack from read_phased_nextpolish_for_nextpolish2.filter{ it.get(1).get(1).countFasta()>=1} 
-    path config from params.nextpolish_cfg
-    output:
+    val tuple_pack from read_phased_medaka2.filter{ it.get(1).get(1).countFasta()>=1} 
     
-    set datasetID, file("${datasetID}.nextpolish2.fasta") into nextpolish_consensus2, nextpolish_consensusTest, nextpolish_consensus_assessment2
-    set datasetID, file("${datasetID}.nextpolish2.fasta.stat") into nextpolish_consensus_stat2, nextpolish_consensus_assessment_stat2
+    output:
+    set str_name, file("${str_name}_racon_medaka/consensus.fasta") into medaka_consensus2, medaka2_reference_minimap, medaka2_reference_minimap2, medaka2_reference_methyl
     
     script:
-    datasetID = tuple_pack.get(0).get(0)
+    str_name = tuple_pack.get(0).get(0)
     """
-    cp ${tuple_pack.get(1).get(1)} consensus.fasta
-    echo ${tuple_pack.get(0).get(1)} > lgs.fofn
-    nextPolish ${config}
-    cp 01_rundir/genome.nextpolish.fasta ${datasetID}.nextpolish2.fasta
-    cp 01_rundir/genome.nextpolish.fasta.stat ${datasetID}.nextpolish2.fasta.stat
+    chmod -R a+rw ./
+    medaka_consensus -i ${tuple_pack.get(0).get(1)} -d ${tuple_pack.get(1).get(1)} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    chmod -R a+rw ./
     """
 }
 
 /*
  * phase the polished assembly to our sample information, and make two copies
  */
-read_phased_nextpolish2 = nextpolish_consensus2.phase(sample_table)
-read_phased_nextpolish2.into{nextpolish2_consensus_for_LCP; nextpolish_consensus2_for_copy}
-
-/*
- * try to address issues with large duplicated segments in the resulting plasmids
- */
-process LCPCorrection {
-    errorStrategy 'finish'
-    publishDir "$results_path/lcp"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from nextpolish2_consensus_for_LCP
-    
-    output:
-    set str_name, path("${str_name}_corrected.fasta") into lcp_corrected
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    python /plasmidseq/scripts/processing/suffix_array_dup_detection.py --plasmid_fasta ${tuple_pack.get(0).get(1)} --output_fasta ${str_name}_corrected.fasta
-    """
-}
-
-/*
- * phase this new reference with the sample table
- */
-read_phased_lcp = lcp_corrected.phase(sample_table_assessment)
-
-
-/*
- * attempt to align the known reference and our assembly for downstream comparison
- */
-process Rotated {
-    errorStrategy 'finish'
-    publishDir "$results_path/rotated"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from read_phased_lcp
-    
-    output:
-    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_align, rotated_reference_minimap, rotated_reference_minimap2, rotated_reference_eval, rotated_reference_methyl
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    python /plasmidseq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
-    """
-}
-
-read_phased_flye = flye_qc.phase(sample_table_flye)
-/*
- * attempt to align the known reference and our assembly for downstream comparison
- */
-process RotatedF {
-    errorStrategy 'finish'
-    publishDir "$results_path/rotatedFlye"
-    beforeScript 'chmod o+rw .'
-
-    input:
-    val tuple_pack from read_phased_flye
-    
-    output:
-    set str_name, path("${str_name}_rotated.fasta"), path("${str_name}_rotated_reference.fasta")  into rotated_reference_eval_flye
-    
-    script:
-    str_name = tuple_pack.get(0).get(0)
-
-    """
-    python /plasmidseq/scripts/processing/orient_contigs.py --assembly ${tuple_pack.get(0).get(1)} --reference ${tuple_pack.get(1).get(2)} --assembly_out ${str_name}_rotated.fasta --reference_out ${str_name}_rotated_reference.fasta
-    """
-}
+medaka_consensus2_for_assessment = medaka_consensus2.phase(sample_table)
+medaka_consensus2_for_assessment.into{medaka2_consensus_eval; medaka_consensus2_for_copy} 
 
 /*
  * take the orginal barcode split reads and extract a sample name for methylation analysis
@@ -737,7 +667,7 @@ methylation_reads_samples = methylation_reads.map { file -> tuple( (file.toStrin
  */
 process Fast5Subset {
     errorStrategy 'finish'
-    publishDir "$results_path/methylation"
+    publishDir "$results_path/methylation_subset_reads"
     beforeScript 'chmod o+rw .'
 
     when:
@@ -760,7 +690,7 @@ process Fast5Subset {
 /*
  * Create two read piles for each of the methylation types
  */
-fast5_phased_base = rotated_reference_methyl.phase(fast5_subset)
+fast5_phased_base = medaka2_reference_methyl.phase(fast5_subset)
 fast5_phased_base.set{fast5_phased}
 
 /*
@@ -770,7 +700,7 @@ process OGMethylationCalling {
     label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
     beforeScript 'chmod o+rw .'
     errorStrategy 'finish'
-    publishDir "$results_path/methylation"
+    publishDir "$results_path/methylation_calling_modphred"
     maxForks 1
 
     when:
@@ -793,11 +723,11 @@ process OGMethylationCalling {
  */
 process ReferenceCopy {
     errorStrategy 'finish'
-    publishDir "$results_path/reference_copy"
+    publishDir "$results_path/assembly_result_with_sample_name"
     beforeScript 'chmod o+rw .'
 
     input:
-    val tuple_pack from nextpolish_consensus2_for_copy
+    val tuple_pack from medaka_consensus2_for_copy
     
     output:
     set str_name, path("${sample_ID}_${str_name}_identity.fasta") into sample_copy
@@ -815,15 +745,14 @@ process ReferenceCopy {
 /*
  * Create an alignment of the reads to the final reference using minimap
  */
-reference_and_reads = porechop_output_for_minimap.phase(rotated_reference_minimap)
-reference_and_reads.into{reference_and_reads_align; reference_and_reads_align2}
+reference_and_reads_align = porechop_output_for_minimap.phase(medaka2_reference_minimap)
 
 /*
  * Align the original reads back to the resulting assembled reference 
  */
 
 process AlignReads {
-    publishDir "$results_path/minimap_final_porechop"
+    publishDir "$results_path/read_alignment_to_assembly"
     beforeScript 'chmod o+rw .'
 
     input:
@@ -852,13 +781,12 @@ process AlignReads {
     """
 }
 
-reference_and_reads_nanofilt = filtered_reads_minimap.phase(rotated_reference_minimap2)
-reference_and_reads_nanofilt.set{reference_and_reads_align_nanofilt}
+reference_and_reads_align_nanofilt = filtered_reads_minimap.phase(medaka2_reference_minimap2)
 /*
  * QC process to check out how reads align after the nanofilter step
 */
 process AlignReadsNanofilter {
-    publishDir "$results_path/minimap_final_nanofilter"
+    publishDir "$results_path/read_alignment_of_filtered_reads_to_assembly"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -894,7 +822,7 @@ process AlignReadsNanofilter {
  * Run a script that checks how well our aligned BAM files do on a number of contamination metrics 
 */
 process AssessContamination {
-    publishDir "$results_path/contamination"
+    publishDir "$results_path/contamination_estimation"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -926,7 +854,7 @@ process AssessContamination {
  */
 process ContaminationAggregation {
     errorStrategy 'finish'
-    publishDir "$results_path/agg_contam"
+    publishDir "$results_path/aggregate_contamination"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -948,66 +876,36 @@ process ContaminationAggregation {
 }
 
 /*
- * Create an alignment of the reference and the known (provided) plasmid map
- */
-
-read_phased_for_alignment = rotated_reference_align.phase(sample_table_assessment2)
-
-process AlignReferences {
-    errorStrategy 'finish'
-    publishDir "$results_path/comparison_basic"
-    beforeScript 'chmod o+rw .'
-    
-    when:
-    params.quality_control_processes
-    
-    input:
-    val tuple_pack from read_phased_for_alignment
-    
-    output:
-    set sample_ID, path("${sample_ID}_aligned.fasta") into needleall_fasta
-    
-    script:
-    known_ref = tuple_pack.get(1).get(2)
-    sample_ID = tuple_pack.get(0).get(0)
-    assembled = tuple_pack.get(0).get(2)
-    """
-    cat ${known_ref} ${assembled} > full.fa
-
-    needleall -asequence ${known_ref} -bsequence ${assembled} -gapopen 10 -gapextend 0.5 -aformat fasta -outfile ${sample_ID}_aligned.fasta
-    """
-}
-
-/*
  * assess the map-reference alignment
  */
 process PlasmidComparison {
     errorStrategy 'finish'
-    publishDir "$results_path/plasmid_comp"
+    publishDir "$results_path/assess_assembly"
     beforeScript 'chmod o+rw .'
 
     when:
     params.quality_control_processes
 
     input:
-    tuple sample, assembled, ref from rotated_reference_eval
+    val tuple_pack from medaka2_consensus_eval.filter{ file(it.get(1).get(2)).exists() && file(it.get(1).get(2)).countFasta()>=1} 
     
     output:
-    path("${sample}_rotated.stats") into plasmid_comp
+    path("${tuple_pack.get(0).get(0)}_nextpolish2.stats") into plasmid_comp
     
     script:
 
     """
-    assess_assembly.py ${assembled} ${ref} --mode replicon > ${sample}_rotated.stats
+    assess_assembly.py ${tuple_pack.get(0).get(1)} ${tuple_pack.get(1).get(2)} --mode replicon > ${tuple_pack.get(0).get(0)}_nextpolish2.stats
     """
 }
+
 
 /*
  * aggregate all the plasmid comparisons into a single file
  */
 process PlasmidComparisonCollection {
     errorStrategy 'finish'
-    publishDir "$results_path/plasmid_stat"
+    publishDir "$results_path/aggregate_assembly_assessment"
     beforeScript 'chmod o+rw .'
     
     when:
@@ -1017,87 +915,12 @@ process PlasmidComparisonCollection {
     file stats from plasmid_comp.toList()
     
     output:
-    file('all_rotated.stats')
+    file('all_nextpolish2.stats')
     
     script:
 
     """
     echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
-    cat header.txt ${stats.collect().join(" ")} > all_rotated.stats
-    """
-}
-
-/*
- * assess the map-reference alignment
- */
-process PlasmidComparisonF {
-    errorStrategy 'finish'
-    publishDir "$results_path/plasmid_flye_comp"
-    beforeScript 'chmod o+rw .'
-
-    when:
-    params.quality_control_processes
-
-    input:
-    tuple sample, assembled, ref from rotated_reference_eval_flye
-    
-    output:
-    path("${sample}_rotated.stats") into plasmid_comp_flye
-    
-    script:
-
-    """
-    assess_assembly.py ${assembled} ${ref} --mode replicon > ${sample}_rotated.stats
-    """
-}
-
-/*
- * aggregate all the plasmid comparisons into a single file
- */
-process PlasmidComparisonCollectionF {
-    errorStrategy 'finish'
-    publishDir "$results_path/plasmid_flye_stat"
-    beforeScript 'chmod o+rw .'
-    
-    when:
-    params.quality_control_processes
-
-    input:
-    file stats from plasmid_comp_flye.toList()
-    
-    output:
-    file('all_rotated.stats')
-    
-    script:
-
-    """
-    echo "assembly\treplicon_name\tlength\tcontig_name\tcontiguity\tidentity\tmax_indel" > header.txt
-    cat header.txt ${stats.collect().join(" ")} > all_rotated.stats
-    """
-}
-
-/*
- * aggregate all the plasmid comparisons into a single file
- */
-process AnnotatePlasmid {
-    errorStrategy 'finish'
-    publishDir "$results_path/annotated"
-    beforeScript 'chmod o+rw .'
-    
-    when:
-    params.annotate_plasmid
-
-    input:
-    tuple name,reference from sample_copy.filter(){ it.get(1).countFasta() == 1}
-    
-    output:
-    path("${name}_annotations") into annotation_dir
-    
-    script:
-
-    """
-    mkdir ${name}_annotations 
-    plannotate batch -i ${reference} -o ${name}_annotations -f ${name} -b /plasmidseq/pLannotate/BLAST_dbs/
-
+    cat header.txt ${stats.collect().join(" ")} > all_nextpolish2.stats
     """
 }

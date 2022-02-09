@@ -1,5 +1,5 @@
 
-./nextflow <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeqFlyMed.nf \
+./nextflow <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
 	   --GPU ON \
 	   -c nextflow.config \
 	   --with-docker \
