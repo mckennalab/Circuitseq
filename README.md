@@ -33,18 +33,59 @@ This will create a file called _plasmidassembly.sif_ in the current working dire
 
 ### Circuit-seq setup
 
-- Clone the repository with ```git clone https://github.com/mckennalab/Circuitseq/``` in the directory where you wish to perform data analysis. 
+1. Clone the Circuit-seq repository into the directory where you'll perform data analysis:
 
-- Prepare a samplesheet. An example sample sheet is provided in this repository under `example_sample_sheet.tsv`. This is a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.  
-  - `Position`: the number of the barcode (e.g 1-96) 
-  - `SampleID`: the sampleID which can be a plasmid name or a alphanumeric code (avoid special characters and spaces)
-  - `Reference`: (optional) you can provide the location where the known fasta reference is located. This will allow the Circuit-seq pipeline to do quality assessment on the assembly
-
-- Copy and modify the example run file found under the pipeline directory (`runCircuitSeq.sh`) to point to your fast5 location as well as other parameters that match you system.
-
-- Finally, once you have modified the files mentioned above, you can run the pipeline by running:
 ```
-bash ./pipelines/runCircuitSet.sh
+git clone https://github.com/mckennalab/Circuitseq/
+``` 
+
+2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/pipelines/examples). This is a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.
+  - `Position`: the number of the barcode well you used for this sample (e.g 1-96) 
+  - `SampleID`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
+  - `Reference`: (optional) you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails
+
+3. Create a shell script and nextflow config file to run your data. You need to point to your fast5 location as well as other parameters that match you system. Here's what an example shell script looks like for running with Singularity. You'll need need to replace the bracketed values with the correct paths for your setup:
+
+```
+./nextflow  <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
+           --GPU ON \
+           -c nextflow.config \
+           --with-singularity \
+           --samplesheet <path_to/your_sample_sheet.txt> \
+           --barcodes /plasmidseq/barcodes/v2/ \
+           --fast5 <full_path_to_fast5_directory> \
+           --guppy_model dna_r9.4.1_450bps_sup.cfg \
+           --medaka_model r941_min_sup_g507 \
+           --gpu_slot cuda:0 \
+           --barcode_min_score 65 \
+           -resume
+
+```
+
+And an example nextflow.config file:
+
+```
+params.quality_control_processes = true
+params.nextpolish_cfg = "<path_to_github_checkout_of_pipelines>/pipelines/run.cfg"
+
+singularity{
+        enabled = true
+        autoMounts = true
+}
+process {
+        container = '<your_singularity_sif_file_path_here>'
+  withLabel: with_gpus {
+         maxForks = 1
+         containerOptions = { workflow.containerEngine == "singularity" ? '--nv':
+         ( workflow.containerEngine == "docker" ? '--gpus all': null )}
+  }
+}
+```
+
+
+4. Finally, once you have modified the files mentioned above, you can run the pipeline by running:
+```
+bash <shell_script_you_saved_just_above_here.sh>
 ```
 
 ## Learn more / cite our publication
