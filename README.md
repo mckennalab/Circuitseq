@@ -62,7 +62,7 @@ git clone https://github.com/mckennalab/Circuitseq/
 
 ```
 
-And an example nextflow.config file:
+And an example nextflow.config file, filling in _your_singularity_sif_file_path_here_ with your path to the _.sif_ from the ```singularity pull``` command :
 
 ```
 params.quality_control_processes = true
