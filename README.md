@@ -4,34 +4,34 @@
 
 `CircuitSeq` is a pipeline to assemble and analyze plasmids from Nanopore long-read sequencing. We use a number of tools; reads are first basecalled and demultiplexed using [Guppy](https://nanoporetech.com/), filtering out chimeric reads and short reads (with [Porechop](https://github.com/rrwick/Porechop) and [NanoFilt](https://github.com/wdecoster/nanofilt)), correcting with the reads with [Canu](https://github.com/marbl/canu), and ultimately assembling with [Flye](https://github.com/fenderglass/Flye/) [Miniasm](https://github.com/lh3/miniasm), These assemblies are then polished with [Medaka](https://github.com/nanoporetech/medaka). 
 
-## Setup 
+# Setup 
 
 Things you'll need:
 
 - fast5 folder location from your Oxford Nanopore run
-- Docker, configured with access for your username
-- Optionally a GPU, which speeds up basecalling and other steps
+- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
+- A server with a GPU with CUDA correctly setup (currently CUDA 11.2 is best to match TensorFlow support)
 
-The computational pipeline starts from a directory of raw Nanopore fast5 files. Circuit-seq uses the Nextflow pipeline engine to shuffle data through each step and output assemblies, plasmid assessments, and other information about each plasmid. First you'll need to have Nextflow installed:
+The computational pipeline starts from a directory of raw Nanopore fast5 files. Circuit-seq uses the Nextflow pipeline engine to move data through each step and output assemblies, plasmid assessments, and other information about each plasmid. 
 
-### Install [Nextflow](https://www.nextflow.io/) using the commands below:
 
-- Check that you have have version 8 or later:
-```java -version ```
+### Install [Nextflow](https://www.nextflow.io/)
 
-- download nextflow:
-```curl -s https://get.nextflow.io | bash ```
-
-- test that it installed correctly
-```./nextflow run hello ```
-
-If you have issues, [Nextflow](https://www.nextflow.io/) has great community resources linked from their website.
+Directions are on their website: https://www.nextflow.io/, no administrator permissions needed
 
 ### Singularity setup
 
 The tools used by Circuit-seq are often complex to install and have many dependencies. To make this easier we've packaged all the tools into a single [Docker container](https://hub.docker.com/repository/docker/aaronmck/plasmidassembly) which can be used by either the Singularity or Docker container engines. *You'll need to have either Singularity (with [user control of binds](https://singularity-admindoc.readthedocs.io/en/latest/the_singularity_config_file.html#user-bind-control-boolean-default-yes) or Docker running on the system you want to run Circuit-seq*. Unfortunately running Docker on some HPC nodes requires permissions which you may have to set up with your institution; Singularity is generally a better option on shared systems.
 
-### Setup Circuit-seq
+It's easiest to pre-download the Singularity container into the current directory (and remove it when you're done). This is done with the following command:
+
+```
+ singularity pull plasmidassembly.sif docker://aaronmck/plasmidassembly:v1_gpv5
+```
+
+This will create a file called _plasmidassembly.sif_ in the current working directory with the fully packaged Singularity container. 
+
+### Circuit-seq setup
 
 - Clone the repository with ```git clone https://github.com/mckennalab/Circuitseq/``` in the directory where you wish to perform data analysis. 
 
@@ -46,12 +46,6 @@ The tools used by Circuit-seq are often complex to install and have many depende
 ```
 bash ./pipelines/runCircuitSet.sh
 ```
-
-## Works in progress / TODOs:
-- See the Github issues tab above for future computational improvements
-- Support for guppy v6+ and Q20 models; this will greatly improve assemblies
-- Cleaner packaging for AWS or other cloud computing platforms
-- Visualization of the final assemblies
 
 ## Learn more / cite our publication
 
