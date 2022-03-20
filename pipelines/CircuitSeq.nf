@@ -193,7 +193,9 @@ fastq_gz_split_files.flatten().filter(){ it.countFastq() > 1 && !(it.getParent()
 }
 
 // extract the well number as an ID -- this must current result in a 2 digit code from 00 to 99
-raw_reads_for_alignment = guppy_alignment.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }.join(sample_table_pre_merge)
+raw_reads_for_alignment_pre = guppy_alignment.map { file -> tuple( (file.toString().split("barcode"))[1][0..1], file) }.join(sample_table_pre_merge)
+raw_reads_for_alignment_pre.into{raw_reads_for_alignment; ch}
+//ch.view { "value: $it" }
 
 // align the reads to the known reference for downstream QC 
 process AlignReadsPre {
@@ -201,7 +203,7 @@ process AlignReadsPre {
     beforeScript 'chmod o+rw .'
 
     input:
-    set str_name, path(reads), path(sample), path(reference) from raw_reads_for_alignment.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
+    set str_name, path(reads), sample, path(reference) from raw_reads_for_alignment.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
 
     when:
     params.quality_control_processes
@@ -262,7 +264,7 @@ process AlignReadsPostLengthFilter {
     params.quality_control_processes
 
     input:
-        tuple str_name,reads,sample_name, path(reference) from raw_reads_for_lf_alignment.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
+        tuple str_name,path(reads),sample_name, path(reference) from raw_reads_for_lf_alignment.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
 
     output:
         tuple val(str_name), path("${str_name}_sorted_post_lf_reads.bam") into minimap_post_lf_reads
@@ -271,12 +273,12 @@ process AlignReadsPostLengthFilter {
 		path("${str_name}.fasta") into sequence_fasta_post_lf
 
     script:
-        str_name = reads.get(0)
+       
 
     """
-    cp ${reference.get(2)} ${str_name}.fasta
+    cp ${reference} ${str_name}.fasta
     samtools dict ${str_name}.fasta > ${str_name}.fasta.dict
-    minimap2 -ax map-ont ${reference.get(2)} ${reads.get(1)} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
+    minimap2 -ax map-ont ${reference} ${reads} | samtools sort -o ${str_name}_sorted_post_lf_reads.bam
     samtools index ${str_name}_sorted_post_lf_reads.bam
      """
     }
@@ -483,7 +485,6 @@ read_phased_medaka = filtered_reads_medaka.join(fasta_graph)
  * perform a Medaka Consensus of the reference
  */
 process MedakaConsensus {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
     publishDir "$results_path/medaka_consensus"
     beforeScript 'chmod o+rw .'
     
@@ -879,7 +880,7 @@ process PlasmidComparison {
     params.quality_control_processes
 
     input:
-    set sample, medaka, sample_name, reference from medaka2_consensus_eval.filter{ file(it.get(3)).exists() && file(it.get(2)).countFasta()>=1} 
+    set sample, path(medaka), sample_name, path(reference) from medaka2_consensus_eval.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
     
     output:
     path("${sample}_nextpolish2.stats") into plasmid_comp
@@ -887,7 +888,7 @@ process PlasmidComparison {
     script:
 
     """
-    assess_assembly.py ${medaka} ${reference} --mode replicon > ${sample}_nextpolish2.stats
+    /plasmidseq/lrac/scripts/assess_assembly.py ${medaka} ${reference} --mode replicon > ${sample}_nextpolish2.stats
     """
 }
 

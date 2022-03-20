@@ -1,4 +1,4 @@
-## with 'DOCKER_BUILDKIT=1 docker build --secret id=mysecret,src=mysecret.txt ./', where mysecret.txt is the 
+## with 'DOCKER_BUILDKIT=1 docker build ./'
 
 # Start from the NVIDIA CUDA Docker image built on top of Ubuntu 20
 FROM nvidia/cuda:11.4.1-runtime-ubuntu20.04
@@ -168,3 +168,5 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN cd /plasmidseq/dupscoop/ && cargo build --release
 
 RUN pip install numpy==1.19.5
+
+RUN git clone https://github.com/rrwick/Long-read-assembler-comparison.git /plasmidseq/lrac
