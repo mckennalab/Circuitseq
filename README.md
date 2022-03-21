@@ -39,10 +39,10 @@ This will create a file called _plasmidassembly.sif_ in the current working dire
 git clone https://github.com/mckennalab/Circuitseq/
 ``` 
 
-2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/pipelines/examples). This is a tab-delimited file with the following headers: `Position`, `SampleID`, `Reference`.
-  	- `Position`: the number of the barcode well you used for this sample (e.g 1-96) 
-  	- `SampleID`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
-  	- `Reference`: (optional) you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails
+2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/pipelines/examples). This is a tab-delimited file with the following headers: `position`, `sample`, `reference`.
+  	- `position`: the number of the barcode well you used for this sample (e.g 1-96) 
+  	- `sample`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
+  	- `reference`: you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference, this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails. If you don't have a reference simple fill in this column with `NA`.
 
 3. Create a shell script and nextflow config file to run your data. You need to point to your fast5 location as well as other parameters that match you system. Here's what an example shell script looks like for running with Singularity. You'll need need to replace the bracketed values with the correct paths for your setup:
 
