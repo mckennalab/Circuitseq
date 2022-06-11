@@ -66,7 +66,10 @@ And an example nextflow.config file, filling in _your_singularity_sif_file_path_
 
 ```
 params.quality_control_processes = true
-params.nextpolish_cfg = "<path_to_github_checkout_of_pipelines>/pipelines/run.cfg"
+params.use_existing_basecalls = false
+//params.basecalling_dir = "<path>"
+//params.base_calling_summary_file = "<path>"
+
 
 singularity{
         enabled = true
@@ -87,6 +90,10 @@ process {
 ```
 bash <shell_script_you_saved_just_above_here.sh>
 ```
+
+### Test data
+If you want to test out the pipeline we have added a downsampled fast5 and fastqs in the `example_data` directory. There you will find an explanation of how to run each example. 
+
 
 ## Learn more / cite our publication
 
