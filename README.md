@@ -47,7 +47,7 @@ git clone https://github.com/mckennalab/Circuitseq/
 3. Create a shell script and nextflow config file to run your data. You need to point to your fast5 location as well as other parameters that match you system. Here's what an example shell script looks like for running with Singularity. You'll need need to replace the bracketed values with the correct paths for your setup:
 
 ```
-./nextflow  <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
+NXF_VER=21.10.6 ./nextflow run <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
            --GPU ON \
            -c nextflow.config \
            --with-singularity \
