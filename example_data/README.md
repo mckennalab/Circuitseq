@@ -11,3 +11,6 @@ To run the two test cases you need to:
 2. Move into either the `run_with_basecalling` or `run_starting_with_fastqs` 
   * If you want to try running with basecalling, you can run the pipeline directly with `bash run_nf.sh`.  The `nextflow.config` file is already set up correctly with `params.use_existing_basecalls` set to `false` and `params.basecalling_dir` and `params.base_calling_summary_file` commented out. Because the paths in the `run_nf.sh` are relative those also dont need to be changed.
   * If you are running with basecalled data (i.e. fastqs) you will need to change the paths in the `run_starting_with_fastqs/nextflow.config` for the fastqs and the sequencing_summary.txt to include where you cloned this repository. 
+
+## What to expect?
+We kept this simple because fast5s are large and we wanted this to run quickly. There are downsampled reads just for one plasmid ([LentiCas9-Blastidicin](https://www.addgene.org/52962/)).  
