@@ -1,0 +1,169 @@
+2022-06-10 22:04:18.222663 [guppy/message] ONT Guppy basecalling software version 6.1.2+e0556ff, minimap2 version 2.22-r1101
+config file:        /oldhome/home/f002sd4/ont-dependencies/ont-guppy/data/dna_r9.4.1_450bps_sup.cfg
+model file:         /oldhome/home/f002sd4/ont-dependencies/ont-guppy/data/template_r9.4.1_450bps_sup.jsn
+input path:         fast5/
+save path:          fastq
+chunk size:         2000
+chunks per runner:  208
+minimum qscore:     10
+records per file:   0
+fastq compression:  ON
+num basecallers:    4
+gpu device:         cuda:0
+kernel path:        
+runners per device: 12
+
+Use of this software is permitted solely under the terms of the end user license agreement (EULA).By running, copying or accessing this software, you are demonstrating your acceptance of the EULA.
+The EULA may be found in /oldhome/home/f002sd4/ont-dependencies/ont-guppy/bin
+2022-06-10 22:04:18.222783 [guppy/info] crashpad_handler not supported on this platform.
+2022-06-10 22:04:18.360602 [guppy/info] CUDA device 0 (compute 8.6) initialised, memory limit 25447170048B (22818652160B free)
+2022-06-10 22:04:19.992368 [guppy/message] Found 1 fast5 files to process.
+2022-06-10 22:04:19.993258 [guppy/message] Init time: 1760 ms
+2022-06-10 22:04:19.997086 [guppy/info] Read '038cde8f-1602-4313-8f57-32e785579456' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:19.998222 [guppy/info] Read '03f642cc-b768-411a-af5d-31bbb14223ac' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.000348 [guppy/info] Read '06847f66-d8f6-484a-b3fa-5df94fec3cce' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.001417 [guppy/info] Read '07991533-d57c-4c62-b1a7-68d82b2ee857' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.003540 [guppy/info] Read '07d84ac7-134c-4d29-943c-6e45f7d8eac5' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.005663 [guppy/info] Read '09743e57-5208-4968-96d5-747d1f00345b' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.007786 [guppy/info] Read '102b6536-5741-4bcd-b490-8b71b5b19a6e' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.008855 [guppy/info] Read '107695e0-ac56-426f-a9d0-770b55a8c37f' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.010975 [guppy/info] Read '10eafb80-74d7-4701-9946-f5e61abb210c' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.013066 [guppy/info] Read '121700ae-55b7-4b52-8ef3-798851a2a0cb' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.015188 [guppy/info] Read '2003dc5e-2e97-46aa-8411-d292d5431a3c' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.016256 [guppy/info] Read '206d384d-0604-456a-a2ff-62adfe855045' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.018377 [guppy/info] Read '23a438cd-1b2e-4a8b-b207-c865ac3262e5' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.020500 [guppy/info] Read '23ec180b-9eed-474d-b5dc-42e635ab1b43' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.021567 [guppy/info] Read '24be1341-4f9f-4236-ae67-ae33cfc250e8' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.022633 [guppy/info] Read '2a43c88f-6ade-4e2f-9d90-414cf353fa05' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.024756 [guppy/info] Read '30c63a5b-e3bc-4b98-baf8-c71f296689f4' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.025825 [guppy/info] Read '32447853-f76e-4f59-951a-e08f6403555e' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.027947 [guppy/info] Read '346a7c8d-e552-4729-9597-7f971423541f' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.029011 [guppy/info] Read '3562b387-26c5-4eb8-b537-aa8cfbd8395c' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.031132 [guppy/info] Read '391e08cb-b2a2-467b-b8ec-d5ffe8798294' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.033253 [guppy/info] Read '3d55c238-9715-44f2-989c-0313a317f35a' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.034323 [guppy/info] Read '4187d1b1-637b-4b42-b982-b2e413adfc53' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.035408 [guppy/info] Read '4fbd3a6f-8a20-4e78-b170-e5ca3e7ca992' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.037533 [guppy/info] Read '52a26500-98cd-44ba-bc35-15db1455a48d' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.039655 [guppy/info] Read '5544dce5-e1dc-4863-b3c4-35aa0980c1a9' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.040722 [guppy/info] Read '569d7cae-5520-4037-b129-c27b6a4e7a19' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.042843 [guppy/info] Read '5863bfd3-03db-40b6-b9f9-da7e1970835b' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.043909 [guppy/info] Read '5f4847e4-84b5-45e0-a693-81e3deffb9b9' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.044976 [guppy/info] Read '63d8dcfe-cc82-4175-96d2-cf6d6ec0f391' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.048122 [guppy/info] Read '694bb56d-c03e-4b03-92ab-81416dc85537' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.049190 [guppy/info] Read '6b77aa0e-635d-42e4-8be0-735535f7aceb' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.051315 [guppy/info] Read '728686fa-8675-4ae2-a6de-3ccbbd8cb17b' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.052383 [guppy/info] Read '74f32988-9898-41e5-8e9e-939e23d7bb77' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.054506 [guppy/info] Read '74fa1fad-c8e8-4c82-9b59-cf9ce81674c5' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.055576 [guppy/info] Read '77ca2cdb-6f6f-4f5b-ab52-79046239f4c3' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.056642 [guppy/info] Read '7b7d5793-bb0c-49e4-b1fb-98519f828fd0' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.057711 [guppy/info] Read '7e3f5f96-80bd-407a-b051-47d2d014e806' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.059833 [guppy/info] Read '7f78f0d2-b1bd-417f-b02b-bf2470e19db7' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.060901 [guppy/info] Read '86220e5b-7b38-489f-8c45-b929f3bd3f70' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.063012 [guppy/info] Read '8873bca7-8695-4028-ad5d-549385e86256' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.065140 [guppy/info] Read '8a39d1c7-832c-4222-8d41-0837d8f885f9' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.066209 [guppy/info] Read '8cd34d4e-2418-4421-ae9d-c6092ea892f7' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.068328 [guppy/info] Read '960e289e-12ba-42ea-b537-e55702781da3' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.069397 [guppy/info] Read '9842ec51-e0f3-4d06-80fc-9a949ac8b684' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.072574 [guppy/info] Read '9ada4ab4-59de-4e21-8600-d9c418e6e295' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.074696 [guppy/info] Read '9f7853cc-932b-4c38-bd09-4161b561a793' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.076818 [guppy/info] Read 'a12bdba2-283e-4e20-848b-e9c69de9f3d4' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.077886 [guppy/info] Read 'a479c457-d155-443b-ae65-83ef270b75f8' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.080013 [guppy/info] Read 'a6048f17-f235-474b-b603-7d407b4c13df' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.082149 [guppy/info] Read 'ac9d9a6c-85af-434d-b191-50a6bb85e69d' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.083242 [guppy/info] Read 'b0c29316-f701-4bc8-a1ba-b3719db62a51' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.085375 [guppy/info] Read 'b4efaf61-cc06-4210-8577-7a47e5bffeea' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.086443 [guppy/info] Read 'bd59610d-80e6-4c2c-adac-204a4e5d2dd8' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.087510 [guppy/info] Read 'bd5f7649-60a6-4a47-ba55-682b1fef4f17' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.089634 [guppy/info] Read 'be8295f9-0eaf-4203-a906-5018d4d829c4' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.090713 [guppy/info] Read 'c6326782-1b1a-4e35-af67-ea8072a58d07' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.092856 [guppy/info] Read 'c790341e-de84-40a9-88bb-5c66fca57824' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.093955 [guppy/info] Read 'd17c1abc-26e2-487a-9d54-2ebefe764325' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.096094 [guppy/info] Read 'd1bb4301-483d-4c65-a0e0-a0e0e57ecff3' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.097181 [guppy/info] Read 'e347ce38-d8d6-46db-92d6-091eb63c7673' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.099339 [guppy/info] Read 'e6d10b03-74fa-4c74-8d1f-5578573be31c' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.100423 [guppy/info] Read 'e9abf781-e94d-482a-9fc3-c84ef9a79ea3' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.102549 [guppy/info] Read 'ee5db57a-8142-4d87-817d-cacd9bb221e2' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.103617 [guppy/info] Read 'f3f8a83e-8656-4970-bedb-bb31bd6d33b5' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.105764 [guppy/info] Read 'f6ac079d-0957-4403-a8d2-f57dd378e0d9' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.106844 [guppy/info] Read 'f9284be9-f149-4cc5-a702-477f568cfea6' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.108968 [guppy/info] Read 'fb648b5c-5d80-4717-b327-5c549cfe4d1e' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.111110 [guppy/info] Read 'fdac3304-32ed-4284-bc33-ff1e54fbd29b' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.112980 [guppy/info] Read 'ff08cbab-fb2b-41c5-a5f4-10f631a76e94' from file "subset.fast5" has been loaded.
+2022-06-10 22:04:20.113073 [guppy/info] Dispatched batch 0 containing 1 inputs:
+2022-06-10 22:04:20.113129 [guppy/info] Batch input 0 : fast5/subset.fast5
+2022-06-10 22:04:21.109883 [guppy/info] Read '038cde8f-1602-4313-8f57-32e785579456' from file "subset.fast5" completed.
+2022-06-10 22:04:21.110147 [guppy/info] Read '03f642cc-b768-411a-af5d-31bbb14223ac' from file "subset.fast5" completed.
+2022-06-10 22:04:21.110318 [guppy/info] Read '06847f66-d8f6-484a-b3fa-5df94fec3cce' from file "subset.fast5" completed.
+2022-06-10 22:04:21.110429 [guppy/info] Read '07d84ac7-134c-4d29-943c-6e45f7d8eac5' from file "subset.fast5" completed.
+2022-06-10 22:04:21.110620 [guppy/info] Read '102b6536-5741-4bcd-b490-8b71b5b19a6e' from file "subset.fast5" completed.
+2022-06-10 22:04:21.110764 [guppy/info] Read '206d384d-0604-456a-a2ff-62adfe855045' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111061 [guppy/info] Read '07991533-d57c-4c62-b1a7-68d82b2ee857' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111158 [guppy/info] Read '09743e57-5208-4968-96d5-747d1f00345b' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111273 [guppy/info] Read '107695e0-ac56-426f-a9d0-770b55a8c37f' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111388 [guppy/info] Read '10eafb80-74d7-4701-9946-f5e61abb210c' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111482 [guppy/info] Read '121700ae-55b7-4b52-8ef3-798851a2a0cb' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111596 [guppy/info] Read '23ec180b-9eed-474d-b5dc-42e635ab1b43' from file "subset.fast5" completed.
+2022-06-10 22:04:21.111895 [guppy/info] Read '2003dc5e-2e97-46aa-8411-d292d5431a3c' from file "subset.fast5" completed.
+2022-06-10 22:04:21.112014 [guppy/info] Read '23a438cd-1b2e-4a8b-b207-c865ac3262e5' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239228 [guppy/info] Read '24be1341-4f9f-4236-ae67-ae33cfc250e8' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239382 [guppy/info] Read '2a43c88f-6ade-4e2f-9d90-414cf353fa05' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239489 [guppy/info] Read '346a7c8d-e552-4729-9597-7f971423541f' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239612 [guppy/info] Read '391e08cb-b2a2-467b-b8ec-d5ffe8798294' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239734 [guppy/info] Read '3d55c238-9715-44f2-989c-0313a317f35a' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239848 [guppy/info] Read '4fbd3a6f-8a20-4e78-b170-e5ca3e7ca992' from file "subset.fast5" completed.
+2022-06-10 22:04:21.239947 [guppy/info] Read '5f4847e4-84b5-45e0-a693-81e3deffb9b9' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240066 [guppy/info] Read '63d8dcfe-cc82-4175-96d2-cf6d6ec0f391' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240306 [guppy/info] Read '30c63a5b-e3bc-4b98-baf8-c71f296689f4' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240561 [guppy/info] Read '32447853-f76e-4f59-951a-e08f6403555e' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240667 [guppy/info] Read '3562b387-26c5-4eb8-b537-aa8cfbd8395c' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240777 [guppy/info] Read '4187d1b1-637b-4b42-b982-b2e413adfc53' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240876 [guppy/info] Read '52a26500-98cd-44ba-bc35-15db1455a48d' from file "subset.fast5" completed.
+2022-06-10 22:04:21.240989 [guppy/info] Read '5544dce5-e1dc-4863-b3c4-35aa0980c1a9' from file "subset.fast5" completed.
+2022-06-10 22:04:21.241105 [guppy/info] Read '569d7cae-5520-4037-b129-c27b6a4e7a19' from file "subset.fast5" completed.
+2022-06-10 22:04:21.241338 [guppy/info] Read '5863bfd3-03db-40b6-b9f9-da7e1970835b' from file "subset.fast5" completed.
+2022-06-10 22:04:21.332784 [guppy/info] Read '694bb56d-c03e-4b03-92ab-81416dc85537' from file "subset.fast5" completed.
+2022-06-10 22:04:21.332919 [guppy/info] Read '6b77aa0e-635d-42e4-8be0-735535f7aceb' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333079 [guppy/info] Read '728686fa-8675-4ae2-a6de-3ccbbd8cb17b' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333210 [guppy/info] Read '74f32988-9898-41e5-8e9e-939e23d7bb77' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333316 [guppy/info] Read '74fa1fad-c8e8-4c82-9b59-cf9ce81674c5' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333430 [guppy/info] Read '77ca2cdb-6f6f-4f5b-ab52-79046239f4c3' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333543 [guppy/info] Read '7b7d5793-bb0c-49e4-b1fb-98519f828fd0' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333668 [guppy/info] Read '7f78f0d2-b1bd-417f-b02b-bf2470e19db7' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333764 [guppy/info] Read '86220e5b-7b38-489f-8c45-b929f3bd3f70' from file "subset.fast5" completed.
+2022-06-10 22:04:21.333857 [guppy/info] Read '8a39d1c7-832c-4222-8d41-0837d8f885f9' from file "subset.fast5" completed.
+2022-06-10 22:04:21.334148 [guppy/info] Read '7e3f5f96-80bd-407a-b051-47d2d014e806' from file "subset.fast5" completed.
+2022-06-10 22:04:21.334242 [guppy/info] Read '8873bca7-8695-4028-ad5d-549385e86256' from file "subset.fast5" completed.
+2022-06-10 22:04:21.334345 [guppy/info] Read '8cd34d4e-2418-4421-ae9d-c6092ea892f7' from file "subset.fast5" completed.
+2022-06-10 22:04:21.334474 [guppy/info] Read '960e289e-12ba-42ea-b537-e55702781da3' from file "subset.fast5" completed.
+2022-06-10 22:04:21.334580 [guppy/info] Read '9842ec51-e0f3-4d06-80fc-9a949ac8b684' from file "subset.fast5" completed.
+2022-06-10 22:04:21.382619 [guppy/info] Read '9ada4ab4-59de-4e21-8600-d9c418e6e295' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383138 [guppy/info] Read '9f7853cc-932b-4c38-bd09-4161b561a793' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383264 [guppy/info] Read 'a6048f17-f235-474b-b603-7d407b4c13df' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383389 [guppy/info] Read 'bd59610d-80e6-4c2c-adac-204a4e5d2dd8' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383489 [guppy/info] Read 'be8295f9-0eaf-4203-a906-5018d4d829c4' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383698 [guppy/info] Read 'a12bdba2-283e-4e20-848b-e9c69de9f3d4' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383810 [guppy/info] Read 'a479c457-d155-443b-ae65-83ef270b75f8' from file "subset.fast5" completed.
+2022-06-10 22:04:21.383929 [guppy/info] Read 'ac9d9a6c-85af-434d-b191-50a6bb85e69d' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384063 [guppy/info] Read 'b0c29316-f701-4bc8-a1ba-b3719db62a51' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384170 [guppy/info] Read 'b4efaf61-cc06-4210-8577-7a47e5bffeea' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384273 [guppy/info] Read 'bd5f7649-60a6-4a47-ba55-682b1fef4f17' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384401 [guppy/info] Read 'c6326782-1b1a-4e35-af67-ea8072a58d07' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384511 [guppy/info] Read 'c790341e-de84-40a9-88bb-5c66fca57824' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384621 [guppy/info] Read 'd17c1abc-26e2-487a-9d54-2ebefe764325' from file "subset.fast5" completed.
+2022-06-10 22:04:21.384732 [guppy/info] Read 'd1bb4301-483d-4c65-a0e0-a0e0e57ecff3' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788168 [guppy/info] Read 'f3f8a83e-8656-4970-bedb-bb31bd6d33b5' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788307 [guppy/info] Read 'f6ac079d-0957-4403-a8d2-f57dd378e0d9' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788431 [guppy/info] Read 'fb648b5c-5d80-4717-b327-5c549cfe4d1e' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788610 [guppy/info] Read 'e9abf781-e94d-482a-9fc3-c84ef9a79ea3' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788735 [guppy/info] Read 'ee5db57a-8142-4d87-817d-cacd9bb221e2' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788864 [guppy/info] Read 'e347ce38-d8d6-46db-92d6-091eb63c7673' from file "subset.fast5" completed.
+2022-06-10 22:04:21.788991 [guppy/info] Read 'e6d10b03-74fa-4c74-8d1f-5578573be31c' from file "subset.fast5" completed.
+2022-06-10 22:04:21.789110 [guppy/info] Read 'f9284be9-f149-4cc5-a702-477f568cfea6' from file "subset.fast5" completed.
+2022-06-10 22:04:21.789256 [guppy/info] Read 'fdac3304-32ed-4284-bc33-ff1e54fbd29b' from file "subset.fast5" completed.
+2022-06-10 22:04:21.789367 [guppy/info] Read 'ff08cbab-fb2b-41c5-a5f4-10f631a76e94' from file "subset.fast5" completed.
+2022-06-10 22:04:21.824276 [guppy/info] Completed batch 0
+2022-06-10 22:04:21.824352 [guppy/message] Caller time: 1831 ms, Samples called: 9155485, samples/s: 5.00026e+06
+2022-06-10 22:04:21.824408 [guppy/message] Finishing up any open output files.
+2022-06-10 22:04:24.585406 [guppy/info] Stats for model /oldhome/home/f002sd4/ont-dependencies/ont-guppy/data/template_r9.4.1_450bps_sup.jsn, 12 runners/device, 208 chunks/run, 2000 blocks/chunk, lifetime 5.252 s
+CUDA device 0: 5 runs with 1001 chunks (96.25%), 9616831 samples (92.47%), avg max size 9928, avg size 9607.2 (96.769% of max), 1.8311e+06 samples/s
+2022-06-10 22:04:24.617323 [guppy/message] Basecalling completed successfully.
