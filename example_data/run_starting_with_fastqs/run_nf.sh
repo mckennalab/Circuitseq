@@ -10,5 +10,7 @@ NXF_VER=21.10.6 nextflow run ../../pipelines/CircuitSeq.nf \
            --gpu_slot cuda:0 \
            --barcode_min_score 65 \
            --quality_control_processes true \
-           --use_existing_basecalls false \
+           --use_existing_basecalls true \
+           --basecalling_dir <path to fastq dir> \
+           --base_calling_summary_file <path_to_summary.txt> \
            -resume
