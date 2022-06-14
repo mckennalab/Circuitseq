@@ -53,14 +53,14 @@ git clone https://github.com/mckennalab/Circuitseq/
   	- `reference`: you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference, this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails. If you don't have a reference simple fill in this column with `NA`.
 
 3. Create a copy of the `run_nf.sh` shell script found in the pipelines directory and modify the following parameters:
- - Path to nextflow if it is not in your path
- - Path to the CircuitSeq.nf pipeline file found in /pipelines 
- - Path to the nextflow.config file found in /pipelines
- - Path to your samplesheet 
- - Path to your fast5 directory
- - If instead you are starting from basecalled data you need to activate two additional parameters:
-  - `--basecalling_dir` with the path to your fast5 directory 
-  - `--base_calling_summary_file` with the path to your `sequencing_summary.txt` file
+    - Path to nextflow if it is not in your path
+    - Path to the CircuitSeq.nf pipeline file found in /pipelines 
+    - Path to the nextflow.config file found in /pipelines
+    - Path to your samplesheet 
+    - Path to your fast5 directory
+    - If instead you are starting from basecalled data you need to activate two additional parameters:
+        - `--basecalling_dir` with the path to your fast5 directory 
+        - `--base_calling_summary_file` with the path to your `sequencing_summary.txt` file
 
 ```
 #It is safest to use absolute paths  
