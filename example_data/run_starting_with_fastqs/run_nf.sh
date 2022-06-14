@@ -1,6 +1,6 @@
-NXF_VER=21.10.6 nextflow run ../../pipelines/CircuitSeq.nf \
+NXF_VER=21.10.6 nextflow run <path to pipelines/CircuitSeq.nf> \
            --GPU ON \
-           -c ../../pipelines/nextflow.config \
+           -c <path to pipelines/nextflow.config> \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
            --fast5 <path to fast5 directory> \
