@@ -6,18 +6,26 @@
 
 # Setup 
 
-Things you'll need:
+Things you'll need if running from fast5s:
 
-- fast5 folder location from your Oxford Nanopore run
-- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
+- location of your fast5 from your Oxford Nanopore run
 - A server with a GPU with CUDA correctly setup (currently CUDA 11.2 is best to match TensorFlow support)
+- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
 
-The computational pipeline starts from a directory of raw Nanopore fast5 files. Circuit-seq uses the Nextflow pipeline engine to move data through each step and output assemblies, plasmid assessments, and other information about each plasmid. 
+
+Things you'll need if running with basecalled data:
+- location of your fastq directory 
+- location of the sequencing_summary.txt file (usually found in the basecalling dir)
+- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
+
+
+The computational pipeline starts from a directory of raw Nanopore fast5 files, you can also skip the basecalling step if you already have basecalled your data. Circuit-seq uses the Nextflow pipeline engine to move data through each step and output assemblies, plasmid assessments, and other information about each plasmid. 
 
 
 ### Install [Nextflow](https://www.nextflow.io/)
 
 Directions are on their website: https://www.nextflow.io/, no administrator permissions needed
+Ideally put nextflow in your PATH
 
 ### Singularity setup
 
@@ -39,56 +47,50 @@ This will create a file called _plasmidassembly.sif_ in the current working dire
 git clone https://github.com/mckennalab/Circuitseq/
 ``` 
 
-2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/pipelines/examples). This is a tab-delimited file with the following headers: `position`, `sample`, `reference`.
-  	- `position`: the number of the barcode well you used for this sample (e.g 1-96) 
+2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/example_data/example_samplesheet.tsv). This is a tab-delimited file with the following headers: `position`, `sample`, `reference`.
+  	- `position`: the number of the barcode well you used for this sample (e.g 01-96) 
   	- `sample`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
   	- `reference`: you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference, this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails. If you don't have a reference simple fill in this column with `NA`.
 
-3. Create a shell script and nextflow config file to run your data. You need to point to your fast5 location as well as other parameters that match you system. Here's what an example shell script looks like for running with Singularity. You'll need need to replace the bracketed values with the correct paths for your setup:
+3. Create a copy of the `run_nf.sh` shell script found in the pipelines directory and modify the following parameters:
+ - Path to nextflow if it is not in your path
+ - Path to the CircuitSeq.nf pipeline file found in /pipelines 
+ - Path to the nextflow.config file found in /pipelines
+ - Path to your samplesheet 
+ - Path to your fast5 directory
+ - If instead you are starting from basecalled data you need to activate two additional parameters:
+  - `--basecalling_dir` with the path to your fast5 directory 
+  - `--base_calling_summary_file` with the path to your `sequencing_summary.txt` file
 
 ```
-NXF_VER=21.10.6 ./nextflow run <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
+#It is safest to use absolute paths  
+NXF_VER=21.10.6 nextflow run ./Experimental_Circuitseq/pipelines/CircuitSeq.nf \
            --GPU ON \
-           -c nextflow.config \
-           --with-singularity \
-           --samplesheet <path_to/your_sample_sheet.txt> \
+           -c ./Experimental_Circuitseq/pipelines/nextflow.config \
+           -with-singularity <path to .sif file> \
+           --samplesheet <path to sample_sheet.tsv> \
+           --fast5 <path to fast5 directory> \
            --barcodes /plasmidseq/barcodes/v2/ \
-           --fast5 <full_path_to_fast5_directory> \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
            --medaka_model r941_min_sup_g507 \
            --gpu_slot cuda:0 \
            --barcode_min_score 65 \
+           --quality_control_processes true \
+           --use_existing_basecalls false \
            -resume
 
+#if you are running from previously basecalled data and want to skip basecalling change "use_existing_basecalls" to true 
+#add the following parameters to this file:
+#path to fastq directory
+#--basecalling_dir <path_to_fastq_dir>
+#path to sequencing_summary file
+#--base_calling_summary_file <path_to_summary.txt>
+
 ```
-
-And an example nextflow.config file, filling in _your_singularity_sif_file_path_here_ with your path to the _.sif_ from the ```singularity pull``` command :
-
-```
-params.quality_control_processes = true
-params.use_existing_basecalls = false
-//params.basecalling_dir = "<path>"
-//params.base_calling_summary_file = "<path>"
-
-
-singularity{
-        enabled = true
-        autoMounts = true
-}
-process {
-        container = '<your_singularity_sif_file_path_here>'
-  withLabel: with_gpus {
-         maxForks = 1
-         containerOptions = { workflow.containerEngine == "singularity" ? '--nv':
-         ( workflow.containerEngine == "docker" ? '--gpus all': null )}
-  }
-}
-```
-
 
 4. Finally, once you have modified the files mentioned above, you can run the pipeline by running:
 ```
-bash <shell_script_you_saved_just_above_here.sh>
+bash <shell_script_you_modified_just_above_here.sh>
 ```
 
 ### Test data
