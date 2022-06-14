@@ -1,7 +1,7 @@
 #It is safest to use absolute paths  
 NXF_VER=21.10.6 nextflow run ./Experimental_Circuitseq/pipelines/CircuitSeq.nf \
            --GPU ON \
-           -c nextflow.config \
+           -c ./Experimental_Circuitseq/pipelines/nextflow.config \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
            --fast5 <path to fast5 directory> \
