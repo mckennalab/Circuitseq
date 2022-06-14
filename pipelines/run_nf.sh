@@ -1,5 +1,5 @@
 #It is safest to use absolute paths  
-NXF_VER=21.10.6 nextflow run ./CircuitSeq.nf \
+NXF_VER=21.10.6 nextflow run ./Experimental_Circuitseq/pipelines/CircuitSeq.nf \
            --GPU ON \
            -c nextflow.config \
            -with-singularity <path to .sif file> \
