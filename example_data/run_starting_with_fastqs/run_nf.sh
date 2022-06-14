@@ -3,7 +3,7 @@ NXF_VER=21.10.6 nextflow run <path to pipelines/CircuitSeq.nf> \
            -c <path to pipelines/nextflow.config> \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
-           --fast5 <path to fast5 directory> \
+           --fast5 "none" \
            --barcodes /plasmidseq/barcodes/v2/ \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
            --medaka_model r941_min_sup_g507 \
