@@ -99,7 +99,7 @@ If you want to test out the pipeline we have added a downsampled fast5 and fastq
 
 ## Learn more / cite our publication
 
-For more information please refer to [our publication](https://www.biorxiv.org/content/10.1101/2022.01.25.477550v1). If you find this work useful, also consider citing our work: 
+For more information please refer to [our publication]([https://pubs.acs.org/doi/10.1021/acssynbio.2c00126]). If you find this work useful, also consider citing our work: 
 
 ```
 @article{doi:10.1021/acssynbio.2c00126,
