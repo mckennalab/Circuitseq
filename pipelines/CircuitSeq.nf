@@ -115,38 +115,43 @@ process GuppyDemultiplex {
 /*
  * split samples by their tagmentation barcode
  */
-process GuppyDemultiplexExisting {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-    beforeScript 'chmod o+rw .'
-    publishDir "$results_path/guppy_demultiplex"
+if (params.use_existing_basecalls) {
 
-    when:
-    (params.use_existing_basecalls)
+    ch_basecalling_dir = file(params.basecalling_dir, checkIfExists: true)
 
-    input:
-    path basecalled from params.basecalling_dir
+    process GuppyDemultiplexExisting {
 
-    output:
-    path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
-    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
-    
-    
-    script:
+        errorStrategy 'ignore'
+        label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+        beforeScript 'chmod o+rw .'
+        publishDir "$results_path/guppy_demultiplex"
+
+        input:
+        path basecalled from params.basecalling_dir
+
+        output:
+        path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
+        path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
         
-    """
-    guppy_barcoder \\
-        --input_path ${basecalled} \\
-        --save_path saved_data \\
-        --data_path ${params.barcodes} \\
-        --barcode_kits MY-CUSTOM-BARCODES \\
-        --front_window_size 120 \\
-        --min_score_mask 30 \\
-        -x $params.gpu_slot \\
-        --min_score $params.barcode_min_score \\
-        -q 1000000 \\
-        --compress_fastq
-    chmod -R o+rw ./
-    """
+        
+        script:
+            
+        """
+        guppy_barcoder \\
+            --input_path ${basecalled} \\
+            --save_path saved_data \\
+            --data_path ${params.barcodes} \\
+            --barcode_kits MY-CUSTOM-BARCODES \\
+            --front_window_size 120 \\
+            --min_score_mask 30 \\
+            -x $params.gpu_slot \\
+            --min_score $params.barcode_min_score \\
+            -q 1000000 \\
+            --compress_fastq
+        chmod -R o+rw ./
+        """
+    }
+
 }
 
 barcoding_split_summary = barcoding_split_summary_de_novo.mix(barcoding_split_summary_existing)
