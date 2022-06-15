@@ -64,9 +64,10 @@ git clone https://github.com/mckennalab/Circuitseq/
 
 ```
 #It is safest to use absolute paths  
-NXF_VER=21.10.6 nextflow run ./Experimental_Circuitseq/pipelines/CircuitSeq.nf \
+#It is safest to use absolute paths  
+NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --GPU ON \
-           -c ./Experimental_Circuitseq/pipelines/nextflow.config \
+           -c <path to /pipelines/nextflow.config> \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
            --use_existing_basecalls <false if from fast5, true if from fastq> \
