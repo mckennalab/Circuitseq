@@ -34,7 +34,8 @@ if (!binding.hasVariable('params.quality_control_processes')) {
 log.info "Quality control output: " + params.quality_control_processes
 
 if (!(params.use_existing_basecalls)) {
-   params.basecalling_dir = file('none')
+   params.basecalling_dir = 1
+   //params.basecalling_dir = file('none')
 }
 
 println "Project : $workflow.projectDir"
@@ -154,8 +155,15 @@ if (params.use_existing_basecalls) {
 
 }
 
-barcoding_split_summary = barcoding_split_summary_de_novo.mix(barcoding_split_summary_existing)
-fastq_gz_split_files = fastq_gz_split_files_de_novo.mix(fastq_gz_split_files_existing)
+if (!params.use_existing_basecalls){
+    barcoding_split_summary = barcoding_split_summary_de_novo
+    fastq_gz_split_files = fastq_gz_split_files_de_novo
+}
+
+if (params.use_existing_basecalls) {
+    barcoding_split_summary = barcoding_split_summary_existing
+    fastq_gz_split_files = fastq_gz_split_files_existing
+}
 
 /*
  * Run the pyco quality control step on the whole collection of reads from guppy
@@ -288,7 +296,7 @@ process AlignReadsPostLengthFilter {
      """
     }
 
-basecalling_summary_file_mix = params.base_calling_summary_file ? params.base_calling_summary_file : basecalling_summary_file
+basecalling_summary_file_mix = params.use_existing_basecalls ? params.base_calling_summary_file : basecalling_summary_file
 
 /*
  * Filter reads by quality
