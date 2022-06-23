@@ -219,7 +219,7 @@ process AlignReadsPre {
     set str_name, path(reads), sample, path(reference) from raw_reads_for_alignment.filter{ file(it.get(3)).exists() && file(it.get(3)).countFasta()>=1} 
 
     when:
-    $params.quality_control_processes
+    params.quality_control_processes
 
     output:
     
