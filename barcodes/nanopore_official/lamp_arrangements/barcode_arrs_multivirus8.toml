@@ -1,0 +1,17 @@
+[loading_options]
+barcodes_filename = "barcodes_masked.fasta"
+lamp_targets_filename = "multivirus_targets.fasta"
+double_variants_frontrear = true
+
+# ############### LAMP barcodes ###############
+
+[arrangement]
+name = "barcode_arrs_multivirus8"
+id_pattern = "LAMP%02i"
+compatible_kits = ["OND-SQK-RP0384L"]
+first_index = 11
+last_index = 18
+kit = "MULTIVIRUS"
+normalised_id_pattern = "FIP%02i"
+barcode1_pattern = "LM%02i"
+lamp_masks = ["human_ACTB","nCoV2019_E1","nCoV2019_N2","nCoV2019_AS1","H1N1_Seg4","H3N2_HA","FluB_NB","RSVA_rsva","RSVB_rsvb"]
