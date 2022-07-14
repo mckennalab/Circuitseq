@@ -33,9 +33,11 @@ if (!binding.hasVariable('params.quality_control_processes')) {
 }
 log.info "Quality control output: " + params.quality_control_processes
 
-if (!params.use_existing_basecalls) {
-   params.basecalling_dir = file('none')
+if (!(params.use_existing_basecalls)) {
+   params.basecalling_dir = 1
+   //params.basecalling_dir = file('none')
 }
+
 
 println "Project : $workflow.projectDir"
 println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
@@ -58,7 +60,7 @@ process GuppyBaseCalling {
     path "basecalling/sequencing_summary.txt" into basecalling_summary_file, basecalling_summary_for_pyco   // the fastq output file path
 
     when:
-    !params.use_existing_basecalls
+    !(params.use_existing_basecalls)
     
     script:
         
@@ -92,7 +94,7 @@ process GuppyDemultiplex {
     path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_de_novo
     
     when:
-    !params.use_existing_basecalls
+    !(params.use_existing_basecalls)
     
     script:
         
@@ -101,7 +103,7 @@ process GuppyDemultiplex {
         --input_path ${basecalled} \\
         --save_path saved_data \\
         --data_path ${params.barcodes} \\
-        --barcode_kits MY-CUSTOM-BARCODES \\
+        --barcode_kits ${params.barcode_kit} \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
         -x $params.gpu_slot \\
@@ -115,42 +117,54 @@ process GuppyDemultiplex {
 /*
  * split samples by their tagmentation barcode
  */
-process GuppyDemultiplexExisting {
-    label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
-    beforeScript 'chmod o+rw .'
-    publishDir "$results_path/guppy_demultiplex"
+if (params.use_existing_basecalls) {
 
-    when:
-    params.use_existing_basecalls
+    ch_basecalling_dir = file(params.basecalling_dir, checkIfExists: true)
 
-    input:
-    path basecalled from params.basecalling_dir
+    process GuppyDemultiplexExisting {
 
-    output:
-    path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
-    path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
-    
-    
-    script:
+        errorStrategy 'ignore'
+        label (params.GPU == "ON" ? 'with_gpus': 'with_cpus')
+        beforeScript 'chmod o+rw .'
+        publishDir "$results_path/guppy_demultiplex"
+
+        input:
+        path basecalled from params.basecalling_dir
+
+        output:
+        path "saved_data/barcoding_summary.txt" into barcoding_split_summary_existing   // the fastq output file path
+        path "saved_data/barcode**/**.fastq.gz" into fastq_gz_split_files_existing
         
-    """
-    guppy_barcoder \\
-        --input_path ${basecalled} \\
-        --save_path saved_data \\
-        --data_path ${params.barcodes} \\
-        --barcode_kits MY-CUSTOM-BARCODES \\
-        --front_window_size 120 \\
-        --min_score_mask 30 \\
-        -x $params.gpu_slot \\
-        --min_score $params.barcode_min_score \\
-        -q 1000000 \\
-        --compress_fastq
-    chmod -R o+rw ./
-    """
+        
+        script:
+            
+        """
+        guppy_barcoder \\
+            --input_path ${basecalled} \\
+            --save_path saved_data \\
+            --data_path ${params.barcodes} \\
+            --barcode_kits ${params.barcode_kit} \\
+            --front_window_size 120 \\
+            --min_score_mask 30 \\
+            -x $params.gpu_slot \\
+            --min_score $params.barcode_min_score \\
+            -q 1000000 \\
+            --compress_fastq
+        chmod -R o+rw ./
+        """
+    }
+
 }
 
-barcoding_split_summary = barcoding_split_summary_de_novo.mix(barcoding_split_summary_existing)
-fastq_gz_split_files = fastq_gz_split_files_de_novo.mix(fastq_gz_split_files_existing)
+if (!params.use_existing_basecalls){
+    barcoding_split_summary = barcoding_split_summary_de_novo
+    fastq_gz_split_files = fastq_gz_split_files_de_novo
+}
+
+if (params.use_existing_basecalls) {
+    barcoding_split_summary = barcoding_split_summary_existing
+    fastq_gz_split_files = fastq_gz_split_files_existing
+}
 
 /*
  * Run the pyco quality control step on the whole collection of reads from guppy
@@ -167,7 +181,7 @@ process pycoQC {
     path "pycoQC.html" into pycoQC_HTML
     
     when:
-    !params.use_existing_basecalls
+    !(params.use_existing_basecalls)
 
     do_base_calling
     
@@ -283,7 +297,7 @@ process AlignReadsPostLengthFilter {
      """
     }
 
-basecalling_summary_file_mix = params.base_calling_summary_file ? params.base_calling_summary_file : basecalling_summary_file
+basecalling_summary_file_mix = params.use_existing_basecalls ? params.base_calling_summary_file : basecalling_summary_file
 
 /*
  * Filter reads by quality
