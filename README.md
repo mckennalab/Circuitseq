@@ -6,18 +6,26 @@
 
 # Setup 
 
-Things you'll need:
+Things you'll need if running from fast5s:
 
-- fast5 folder location from your Oxford Nanopore run
-- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
+- location of your fast5 from your Oxford Nanopore run
 - A server with a GPU with CUDA correctly setup (currently CUDA 11.2 is best to match TensorFlow support)
+- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
 
-The computational pipeline starts from a directory of raw Nanopore fast5 files. Circuit-seq uses the Nextflow pipeline engine to move data through each step and output assemblies, plasmid assessments, and other information about each plasmid. 
+
+Things you'll need if running with basecalled data:
+- location of your fastq directory 
+- location of the sequencing_summary.txt file (usually found in the basecalling dir)
+- Singularity (preferred) or Docker (fine, just requires admin permissions), configured with access for your username
+
+
+The computational pipeline starts from a directory of raw Nanopore fast5 files, you can also skip the basecalling step if you already have basecalled your data. Circuit-seq uses the Nextflow pipeline engine to move data through each step and output assemblies, plasmid assessments, and other information about each plasmid. 
 
 
 ### Install [Nextflow](https://www.nextflow.io/)
 
 Directions are on their website: https://www.nextflow.io/, no administrator permissions needed
+Ideally put nextflow in your PATH
 
 ### Singularity setup
 
@@ -39,61 +47,56 @@ This will create a file called _plasmidassembly.sif_ in the current working dire
 git clone https://github.com/mckennalab/Circuitseq/
 ``` 
 
-2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/pipelines/examples). This is a tab-delimited file with the following headers: `position`, `sample`, `reference`.
-  	- `position`: the number of the barcode well you used for this sample (e.g 1-96) 
+2. Prepare a sample sheet. An example sample sheet is provided in this repository in the [example directory](https://github.com/mckennalab/Circuitseq/tree/main/example_data/example_samplesheet.tsv). This is a tab-delimited file with the following headers: `position`, `sample`, `reference`.
+  	- `position`: the number of the barcode well you used for this sample (e.g 01-96) 
   	- `sample`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
   	- `reference`: you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference, this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails. If you don't have a reference simple fill in this column with `NA`.
 
-3. Create a shell script and nextflow config file to run your data. You need to point to your fast5 location as well as other parameters that match you system. Here's what an example shell script looks like for running with Singularity. You'll need need to replace the bracketed values with the correct paths for your setup:
+3. Create a copy of the `run_nf.sh` shell script found in the pipelines directory and modify the following parameters:
+    - Path to nextflow if it is not in your path
+    - Path to the CircuitSeq.nf pipeline file found in /pipelines 
+    - Path to the nextflow.config file found in /pipelines
+    - Path to your samplesheet 
+    - Choose if you are running from fast5 or fastq by changing use_existing_basecalls to false or true, respectively 
+    - If running from fast5 provide a path to `--fast5` directory and leave `--basecalling_dir` and `--base_calling_summary_file` as `""`
+    - If running from fastq leave `--fast5`as `""` and provide fastq directory for`--basecalling_dir` and sequencing_summary.txt file for`--base_calling_summary_file`
+
 
 ```
-NXF_VER=21.10.6 ./nextflow run <path_to_github_checkout_of_pipelines>/pipelines/CircuitSeq.nf \
+#It is safest to use absolute paths  
+#It is safest to use absolute paths  
+NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --GPU ON \
-           -c nextflow.config \
-           --with-singularity \
-           --samplesheet <path_to/your_sample_sheet.txt> \
-	   --barcode_kit "MY-CUSTOM-BARCODES" \
+           -c <path to /pipelines/nextflow.config> \
+           -with-singularity <path to .sif file> \
+           --samplesheet <path to sample_sheet.tsv> \
+           --use_existing_basecalls <false if from fast5, true if from fastq> \
+           --fast5 <path to fast5 directory, use "" if starting from fastq> \
+           --basecalling_dir <path_to_fastq_dir, use "" if starting from fast5> \
+           --base_calling_summary_file <path_to_summary.txt, use "" if starting from fast5> \
            --barcodes /plasmidseq/barcodes/v2/ \
-           --fast5 <full_path_to_fast5_directory> \
+           --barcode_kit "MY-CUSTOM-BARCODES" \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
            --medaka_model r941_min_sup_g507 \
            --gpu_slot cuda:0 \
            --barcode_min_score 65 \
+           --quality_control_processes true \
            -resume
 	   
 #To use nanopore barcoding kits you can change: 
 #--barcodes to /plasmidseq/barcodes/nanopore_official/
 #--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
 
+#To use nanopore barcoding kits you can change: 
+#--barcodes to /plasmidseq/barcodes/nanopore_official/
+#--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
+#because the nanopore barcodes are shorter you will need to reduce --barcode_min_score from 65 to 40 or 45 (we have not been able to test this because we don't have the nanopore barcoding kits)
+
 ```
-
-And an example nextflow.config file, filling in _your_singularity_sif_file_path_here_ with your path to the _.sif_ from the ```singularity pull``` command :
-
-```
-params.quality_control_processes = true
-params.use_existing_basecalls = false
-//params.basecalling_dir = "<path>"
-//params.base_calling_summary_file = "<path>"
-
-
-singularity{
-        enabled = true
-        autoMounts = true
-}
-process {
-        container = '<your_singularity_sif_file_path_here>'
-  withLabel: with_gpus {
-         maxForks = 1
-         containerOptions = { workflow.containerEngine == "singularity" ? '--nv':
-         ( workflow.containerEngine == "docker" ? '--gpus all': null )}
-  }
-}
-```
-
 
 4. Finally, once you have modified the files mentioned above, you can run the pipeline by running:
 ```
-bash <shell_script_you_saved_just_above_here.sh>
+bash <shell_script_you_modified_just_above_here.sh>
 ```
 
 ### Test data
@@ -102,19 +105,22 @@ If you want to test out the pipeline we have added a downsampled fast5 and fastq
 
 ## Learn more / cite our publication
 
-For more information please refer to [our publication](https://www.biorxiv.org/content/10.1101/2022.01.25.477550v1). If you find this work useful, also consider citing our work: 
+For more information please refer to [our publication](https://pubs.acs.org/doi/10.1021/acssynbio.2c00126). If you find this work useful, also consider citing our work: 
 
 ```
-@article {Emiliani2022.01.25.477550,
-	author = {Emiliani, Francesco E and Hsu, Ian and McKenna, Aaron},
-	title = {Circuit-seq: Circular reconstruction of cut in vitro transposed plasmids using Nanopore sequencing},
-	elocation-id = {2022.01.25.477550},
-	year = {2022},
-	doi = {10.1101/2022.01.25.477550},
-	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {Recombinant DNA is a fundamental tool in biotechnology and medicine. Validation of the resulting plasmid sequence is a critical and time-consuming step, which has been dominated for the last 35 years by Sanger sequencing. As plasmid sequences grow more complex with new DNA synthesis and cloning techniques, we need new approaches that address the corresponding validation challenges at scale. Here we prototype a high-throughput plasmid sequencing approach using DNA transposition and Oxford Nanopore sequencing. Our method, Circuit-seq, creates robust, full-length, and accurate plasmid assemblies without prior knowledge of the underlying sequence for approximately $1.50 per plasmid. We demonstrate the power of Circuit-seq across a wide range of plasmid sizes and complexities, generating accurate and contiguous plasmid maps. We then leverage our long read-data to characterize epigenetic marks and estimate plasmid contamination levels. Circuit-seq scales to large numbers of samples at a lower cost than commercial Sanger sequencing, accelerating a key step in synthetic biology, with low startup costs make it practical for individual laboratories.Competing Interest StatementThe authors have declared no competing interest.},
-	URL = {https://www.biorxiv.org/content/early/2022/01/26/2022.01.25.477550},
-	eprint = {https://www.biorxiv.org/content/early/2022/01/26/2022.01.25.477550.full.pdf},
-	journal = {bioRxiv}
+@article{doi:10.1021/acssynbio.2c00126,
+author = {Emiliani, Francesco E. and Hsu, Ian and McKenna, Aaron},
+title = {Multiplexed Assembly and Annotation of Synthetic Biology Constructs Using Long-Read Nanopore Sequencing},
+journal = {ACS Synthetic Biology},
+volume = {0},
+number = {0},
+pages = {null},
+year = {0},
+doi = {10.1021/acssynbio.2c00126},
+    note ={PMID: 35695379},
+
+URL = {
+        https://doi.org/10.1021/acssynbio.2c00126
+
 }
 ```
