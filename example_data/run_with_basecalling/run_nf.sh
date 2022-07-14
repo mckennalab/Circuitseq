@@ -9,6 +9,7 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --basecalling_dir "" \
            --base_calling_summary_file "" \
            --barcodes /plasmidseq/barcodes/v2/ \
+           --barcode_kit "MY-CUSTOM-BARCODES" \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
            --medaka_model r941_min_sup_g507 \
            --gpu_slot cuda:0 \
