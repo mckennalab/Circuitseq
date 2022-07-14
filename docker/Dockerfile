@@ -41,8 +41,8 @@ ENV PATH="/ont/ont-guppy/bin/:${PATH}"
 
 # Add Rerio models
 # ################################################
-RUN git clone https://github.com/nanoporetech/rerio /ont/rerio
-RUN /ont/rerio/download_model.py /ont/rerio/basecall_models/res_dna_r941_min_modbases-all-context_v001
+#RUN git clone https://github.com/nanoporetech/rerio /ont/rerio
+#RUN /ont/rerio/download_model.py /ont/rerio/basecall_models/res_dna_r941_min_modbases-all-context_v001
 
 # Install porechop
 # ################################################
@@ -79,12 +79,12 @@ ENV PATH="/ont/miniasm/:${PATH}"
 
 # install nextpolish
 # ################################################
-RUN apt install -y libncurses5-dev libncursesw5-dev libbz2-dev libclang-dev liblzma-dev
-RUN pip install psutil
-RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.4.0/NextPolish.tgz -O /ont/NextPolish.tgz && \
-    cd /ont/ && \
-    tar -vxzf NextPolish.tgz && cd NextPolish && make
-ENV PATH="/ont/NextPolish/:${PATH}"
+# RUN apt install -y libncurses5-dev libncursesw5-dev libbz2-dev libclang-dev liblzma-dev
+# RUN pip install psutil
+# RUN wget --quiet https://github.com/Nextomics/NextPolish/releases/download/v1.4.0/NextPolish.tgz -O /ont/NextPolish.tgz && \
+#     cd /ont/ && \
+#     tar -vxzf NextPolish.tgz && cd NextPolish && make
+# ENV PATH="/ont/NextPolish/:${PATH}"
 
 # Install fast5_subset
 # ################################################
@@ -129,7 +129,8 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 # cp the github pipeline files 
 # ################################################
 RUN mkdir /plasmidseq/
-RUN git clone https://github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+
+RUN git clone https://github.com/femiliani/Experimental_Circuitseq.git /plasmidseq/
 
 
 ## setup the annotation tool
@@ -170,3 +171,4 @@ RUN cd /plasmidseq/dupscoop/ && cargo build --release
 RUN pip install numpy==1.19.5
 
 RUN git clone https://github.com/rrwick/Long-read-assembler-comparison.git /plasmidseq/lrac
+
