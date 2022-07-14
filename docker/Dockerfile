@@ -129,7 +129,8 @@ RUN pip install ont-pyguppy-client-lib==5.0.11
 # cp the github pipeline files 
 # ################################################
 RUN mkdir /plasmidseq/
-RUN git clone https://github.com/mckennalab/PlasmidSeq.git /plasmidseq/
+
+RUN git clone https://github.com/femiliani/Experimental_Circuitseq.git /plasmidseq/
 
 
 ## setup the annotation tool
@@ -170,3 +171,4 @@ RUN cd /plasmidseq/dupscoop/ && cargo build --release
 RUN pip install numpy==1.19.5
 
 RUN git clone https://github.com/rrwick/Long-read-assembler-comparison.git /plasmidseq/lrac
+
