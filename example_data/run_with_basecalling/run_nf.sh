@@ -4,6 +4,7 @@ NXF_VER=21.10.6 nextflow run ../../pipelines/CircuitSeq.nf \
            --with-singularity \
            --samplesheet ../example_tearsheet.tsv \
            --barcodes /plasmidseq/barcodes/v2/ \
+           --barcode_kit "MY-CUSTOM-BARCODES" \
            --fast5 ../fast5 \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
            --medaka_model r941_min_sup_g507 \
