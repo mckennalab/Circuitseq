@@ -34,7 +34,7 @@ The tools used by Circuit-seq are often complex to install and have many depende
 It's easiest to pre-download the Singularity container into the current directory (and remove it when you're done). This is done with the following command:
 
 ```
- singularity pull plasmidassembly.sif docker://aaronmck/plasmidassembly:v1_gpv5
+ singularity pull plasmidassembly.sif docker://femiliani/circuitseq:allbarcodes
 ```
 
 This will create a file called _plasmidassembly.sif_ in the current working directory with the fully packaged Singularity container. 
@@ -82,6 +82,9 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --quality_control_processes true \
            -resume
 
+#To use nanopore barcoding kits you can change: 
+#--barcodes to /plasmidseq/barcodes/nanopore_official/
+#--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
 
 ```
 
