@@ -39,6 +39,11 @@ It's easiest to pre-download the Singularity container into the current director
 
 This will create a file called _plasmidassembly.sif_ in the current working directory with the fully packaged Singularity container. 
 
+Older versions of singularity (v2 and below) can be downloaded with:
+```
+ singularity build plasmidassembly.sif docker://femiliani/circuitseq:allbarcodes
+```
+
 ### Circuit-seq setup
 
 1. Clone the Circuit-seq repository into the directory where you'll perform data analysis:
