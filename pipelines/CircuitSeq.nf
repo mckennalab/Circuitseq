@@ -38,6 +38,7 @@ if (!(params.use_existing_basecalls)) {
    //params.basecalling_dir = file('none')
 }
 
+
 println "Project : $workflow.projectDir"
 println "Git info: $workflow.repository - $workflow.revision [$workflow.commitId]"
 println "Cmd line: $workflow.commandLine"
@@ -102,7 +103,7 @@ process GuppyDemultiplex {
         --input_path ${basecalled} \\
         --save_path saved_data \\
         --data_path ${params.barcodes} \\
-        --barcode_kits MY-CUSTOM-BARCODES \\
+        --barcode_kits ${params.barcode_kit} \\
         --front_window_size 120 \\
         --min_score_mask 30 \\
         -x $params.gpu_slot \\
@@ -142,7 +143,7 @@ if (params.use_existing_basecalls) {
             --input_path ${basecalled} \\
             --save_path saved_data \\
             --data_path ${params.barcodes} \\
-            --barcode_kits MY-CUSTOM-BARCODES \\
+            --barcode_kits ${params.barcode_kit} \\
             --front_window_size 120 \\
             --min_score_mask 30 \\
             -x $params.gpu_slot \\
