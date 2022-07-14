@@ -64,7 +64,6 @@ git clone https://github.com/mckennalab/Circuitseq/
 
 ```
 #It is safest to use absolute paths  
-#It is safest to use absolute paths  
 NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --GPU ON \
            -c <path to /pipelines/nextflow.config> \
@@ -83,9 +82,6 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            --quality_control_processes true \
            -resume
 	   
-#To use nanopore barcoding kits you can change: 
-#--barcodes to /plasmidseq/barcodes/nanopore_official/
-#--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
 
 #To use nanopore barcoding kits you can change: 
 #--barcodes to /plasmidseq/barcodes/nanopore_official/
