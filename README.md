@@ -75,7 +75,7 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
            --use_existing_basecalls <false if from fast5, true if from fastq> \
-           --fast5 <path to fast5 directory, use "" if starting from fastq> \
+           --fast5 <path to fast5 directory, use "none" if starting from fastq> \
            --basecalling_dir <path_to_fastq_dir, use "" if starting from fast5> \
            --base_calling_summary_file <path_to_summary.txt, use "" if starting from fast5> \
            --barcodes /plasmidseq/barcodes/v2/ \
