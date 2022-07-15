@@ -91,7 +91,7 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
 #To use nanopore barcoding kits you can change: 
 #--barcodes to /plasmidseq/barcodes/nanopore_official/
 #--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
-#because the nanopore barcodes are shorter you will need to reduce --barcode_min_score from 65 to 40 or 45 (we have not been able to test this because we don't have the nanopore barcoding kits)
+#our --barcode_min_score was set based on our demultiplexing data to achieve best sensititivy/specificity, if you find that using nanopore barcodes you are losing too many reads or getting too much noise you can change this parameter accordingly. 
 
 ```
 
