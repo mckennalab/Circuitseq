@@ -103,6 +103,9 @@ bash <shell_script_you_modified_just_above_here.sh>
 ### Test data
 If you want to test out the pipeline we have added a downsampled fast5 and fastqs in the `example_data` directory. There you will find an explanation of how to run each example. 
 
+## pLannotate your plasmids
+By popular demand we are trying to implement a quick way of annotating your plasmids using Matt McGuffie's [pLannotate](https://github.com/barricklab/pLannotate). If you are interested please go to the [plannotate](https://github.com/mckennalab/Circuitseq/edit/main/plannotate) directory and follow the readme. 
+
 
 ## Learn more / cite our publication
 
