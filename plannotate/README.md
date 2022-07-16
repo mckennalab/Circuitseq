@@ -1,4 +1,4 @@
-We've had a few requests to try to implement [pLannotate](https://github.com/barricklab/pLannotate). Currently we are running into some issues running with singularity resulting in some plasmids causing unexpected errors. 
+We've had a few requests to implement [pLannotate](https://github.com/barricklab/pLannotate). Currently we are running into some issues running with singularity resulting in some plasmids causing unexpected errors. 
 For the meantime we have a small bash script that should automate the annotation of your assemblies. 
 
 To begin with set up the conda environment for plannotate as described on their github:
