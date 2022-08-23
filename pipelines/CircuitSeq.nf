@@ -512,7 +512,7 @@ process MedakaConsensus {
     
     """
     chmod -R a+rw ./
-    medaka_consensus -i ${reads} -d ${fasta_graph} -o ${sample}_racon_medaka -m r941_min_high_g360 > file 2>&1
+    medaka_consensus -i ${reads} -d ${fasta_graph} -o ${sample}_racon_medaka -m $params.medaka_model > file 2>&1
     chmod -R a+rw ./
     """
 }
@@ -602,7 +602,7 @@ process MedakaConsensusLCP {
     script:
     """
     chmod -R a+rw ./
-    medaka_consensus -i ${reads} -d ${rotated} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    medaka_consensus -i ${reads} -d ${rotated} -o ${str_name}_racon_medaka -m $params.medaka_model
     chmod -R a+rw ./
     """
 }
@@ -630,7 +630,7 @@ process MedakaPolish {
     script:
     """
     chmod -R a+rw ./
-    medaka_consensus -i ${reads} -d ${rotated} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    medaka_consensus -i ${reads} -d ${rotated} -o ${str_name}_racon_medaka -m $params.medaka_model
     chmod -R a+rw ./
     """
 }
@@ -658,7 +658,7 @@ process MedakaPolish2 {
     script:
     """
     chmod -R a+rw ./
-    medaka_consensus -i ${reads} -d ${reference} -o ${str_name}_racon_medaka -m r941_min_high_g360
+    medaka_consensus -i ${reads} -d ${reference} -o ${str_name}_racon_medaka -m $params.medaka_model
     chmod -R a+rw ./
     """
 }
