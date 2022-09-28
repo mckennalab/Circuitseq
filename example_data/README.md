@@ -27,7 +27,7 @@ NXF_VER=21.10.6 nextflow run ../pipelines/CircuitSeq.nf \
        -with-singularity ../docker/plasmidassembly.sif \
        --samplesheet example_samplesheet.tsv \
        --use_existing_basecalls false \
-       --fast5 /analysis/2022_09_27_circuitseq/Circuitseq/example_data/fast5/ \
+       --fast5 ./fast5/ \
        --basecalling_dir "" \
        --base_calling_summary_file "" \
        --barcodes /plasmidseq/barcodes/v2/ \
@@ -38,8 +38,10 @@ NXF_VER=21.10.6 nextflow run ../pipelines/CircuitSeq.nf \
        --barcode_min_score 65 \
        --quality_control_processes true \
        -resume
-       ```
-        * Head to `run_starting_with_fastqs` if you want to try running with pre-basecalled data, modify the `run_nf.sh` with the appropriate paths, note that here you will have to provide two new parameters, and run it with `bash run_nf.sh`
+```
 
+# From previously basecalled samples
+ 
+ 
 ## What to expect?
 We kept this simple because fast5s are large and we wanted this to run quickly. There are downsampled reads just for one plasmid ([LentiCas9-Blastidicin](https://www.addgene.org/52962/)).  
