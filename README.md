@@ -34,14 +34,14 @@ The tools used by Circuit-seq are often complex to install and have many depende
 It's easiest to pre-download the Singularity container into the current directory (and remove it when you're done). This is done with the following command:
 
 ```
- singularity pull plasmidassembly.sif docker://femiliani/circuitseq:allbarcodes
+ singularity pull plasmidassembly.sif docker://aaronmck/plasmidassembly:1_0_1
 ```
 
 This will create a file called _plasmidassembly.sif_ in the current working directory with the fully packaged Singularity container. 
 
 Older versions of singularity (v2 and below) can be downloaded with:
 ```
- singularity build plasmidassembly.sif docker://femiliani/circuitseq:allbarcodes
+ singularity build plasmidassembly.sif docker://aaronmck/plasmidassembly:1_0_1
 ```
 
 ### Circuit-seq setup
