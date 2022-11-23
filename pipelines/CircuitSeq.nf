@@ -466,25 +466,33 @@ process AssessAssemblyApproach {
     str_name = sample
     myFlye = (!flye) ? 'mydefaultvalue' : flye
     myMiniasm = (!miniasm) ? 'mydefaultvalue' : miniasm
-    method = (!miniasm) ? "flye" : "miniasm"
+    method = "chosen"
 
     shell:
     '''
     if  [ -f "!{myFlye}" ] &&  [ -f "!{myMiniasm}" ]; then 
         flyesize="$(wc -c <"!{myFlye}")"
         flyecount="$(cat "!{myFlye}" | grep ">" | wc -l)"
-	    miniasmsize="$(wc -c <"!{myMiniasm}")"	
-	if [ flyecount > 1 ]; then
-           cp !{myFlye} !{str_name}_!{method}_assembly.fasta  
-    
-    elif [ flyesize > miniasmsize ]; then
+	miniasmsize="$(wc -c <"!{myMiniasm}")"
+	echo $miniasmsize
+	echo $flyecount
+	echo $flyesize
+	if [ "$flyecount" -gt 1 ]; then
+	   echo choosing miniasm as fly made more than one contig
+           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta  
+
+        elif [ "$flyesize" -gt "$miniasmsize" ]; then
+	   echo fly is greater
            cp !{myFlye} !{str_name}_!{method}_assembly.fasta
-   	else 
+   	else
+	   echo miniasm is greater
            cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
     	fi
     elif [ -f "!{myFlye}" ]; then
+        echo only miniasm
         cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
-    else 
+    else
+        echo only fly
         cp !{myFlye} !{str_name}_!{method}_assembly.fasta
     fi
     '''
