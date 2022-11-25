@@ -445,7 +445,7 @@ process ConvertGraph {
 /*
  * We need to 'phase', or line-up, the corrected reads with their assembly results
  */
-assembly_phase = flye_assembly.join(miniasm_assembly)
+assembly_phase = flye_assembly.join(miniasm_assembly,remainder: true)
 
 /*
  * Check for any really poor quality assemblies
@@ -456,7 +456,7 @@ process AssessAssemblyApproach {
     beforeScript 'chmod o+rw .'
 
     input:
-    set sample, path(flye), path(miniasm) from assembly_phase
+    set sample, flye, miniasm from assembly_phase
     
     output:
     tuple val(str_name), path("${str_name}_${method}_assembly.fasta") into fasta_graph
@@ -470,6 +470,7 @@ process AssessAssemblyApproach {
 
     shell:
     '''
+    echo choosing best assembly
     if  [ -f "!{myFlye}" ] &&  [ -f "!{myMiniasm}" ]; then 
         flyesize="$(wc -c <"!{myFlye}")"
         flyecount="$(cat "!{myFlye}" | grep ">" | wc -l)"
@@ -490,10 +491,25 @@ process AssessAssemblyApproach {
     	fi
     elif [ -f "!{myFlye}" ]; then
         echo only miniasm
-        cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
-    else
+	if [ -f "!{myMiniasm}" ]; then
+	   echo miniasm file exists
+           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
+	else
+	  echo no miniasm either
+	  touch !{str_name}_!{method}_assembly.fasta
+	fi 
+    elif [ -f "!{myMiniasm}" ]; then
         echo only fly
-        cp !{myFlye} !{str_name}_!{method}_assembly.fasta
+	if [ -f "!{myFlye}" ]; then
+	  echo fly exists
+          cp !{myFlye} !{str_name}_!{method}_assembly.fasta
+	else
+	  echo no flye either
+	  touch !{str_name}_!{method}_assembly.fasta
+	fi
+    else
+        echo nothing exists
+	touch !{str_name}_!{method}_assembly.fasta
     fi
     '''
 }
