@@ -490,23 +490,10 @@ process AssessAssemblyApproach {
            cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
     	fi
     elif [ -f "!{myFlye}" ]; then
-        echo only miniasm
-	if [ -f "!{myMiniasm}" ]; then
-	   echo miniasm file exists
-           cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
-	else
-	  echo no miniasm either
-	  touch !{str_name}_!{method}_assembly.fasta
-	fi 
+        echo only flye
+	cp !{myFlye} !{str_name}_!{method}_assembly.fasta
     elif [ -f "!{myMiniasm}" ]; then
-        echo only fly
-	if [ -f "!{myFlye}" ]; then
-	  echo fly exists
-          cp !{myFlye} !{str_name}_!{method}_assembly.fasta
-	else
-	  echo no flye either
-	  touch !{str_name}_!{method}_assembly.fasta
-	fi
+        cp !{myMiniasm} !{str_name}_!{method}_assembly.fasta
     else
         echo nothing exists
 	touch !{str_name}_!{method}_assembly.fasta
