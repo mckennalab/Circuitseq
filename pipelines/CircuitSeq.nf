@@ -449,8 +449,8 @@ process ConvertGraph {
  */
 flye_assembly.
 	       join(miniasm_assembly,remainder: true).
-	       map{n -> if (!n[1] == null) {[n[0],"/dev/null",n[2]]} else if(n[2] == null) {[n[0],n[1],"/dev/null"]} else {[n[0],n[1],n[2]]}}.
-	       into{assembly_phase}
+	       map{n -> if (n[1] == null) {[n[0],"/dev/null",n[2]]} else if(n[2] == null) {[n[0],n[1],"/dev/null"]} else {[n[0],n[1],n[2]]}}.
+	       set{assembly_phase}
 // the_junk.view()	  
 
 /*
