@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+import java.nio.file.Files
+
 /*
 ========================================================================================
                          mckenna_lab/plasmid_seq
@@ -445,7 +447,11 @@ process ConvertGraph {
 /*
  * We need to 'phase', or line-up, the corrected reads with their assembly results
  */
-assembly_phase = flye_assembly.join(miniasm_assembly,remainder: true)
+flye_assembly.
+	       join(miniasm_assembly,remainder: true).
+	       map{n -> if (!n[1] == null) {[n[0],"/dev/null",n[2]]} else if(n[2] == null) {[n[0],n[1],"/dev/null"]} else {[n[0],n[1],n[2]]}}.
+	       into{assembly_phase}
+// the_junk.view()	  
 
 /*
  * Check for any really poor quality assemblies
@@ -456,7 +462,7 @@ process AssessAssemblyApproach {
     beforeScript 'chmod o+rw .'
 
     input:
-    set sample, flye, miniasm from assembly_phase
+    set sample, path(flye), path(miniasm) from assembly_phase
     
     output:
     tuple val(str_name), path("${str_name}_${method}_assembly.fasta") into fasta_graph

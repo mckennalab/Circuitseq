@@ -172,3 +172,4 @@ RUN pip install numpy==1.19.5
 
 RUN git clone https://github.com/rrwick/Long-read-assembler-comparison.git /plasmidseq/lrac
 
+RUN pip install nanofilt
