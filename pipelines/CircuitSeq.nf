@@ -150,7 +150,7 @@ if (params.use_existing_basecalls) {
             --min_score_mask 30 \\
             -x $params.gpu_slot \\
             --min_score $params.barcode_min_score \\
-            -q 1000000 \\
+            -q 1000000 --recursive \\
             --compress_fastq
         chmod -R o+rw ./
         """
