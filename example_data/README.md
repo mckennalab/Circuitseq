@@ -28,8 +28,8 @@ NXF_VER=21.10.6 nextflow run ../pipelines/CircuitSeq.nf \
        --samplesheet example_samplesheet.tsv \
        --use_existing_basecalls false \
        --fast5 ./fast5/ \
-       --basecalling_dir "" \
-       --base_calling_summary_file "" \
+       --basecalling_dir "none" \
+       --base_calling_summary_file "none" \
        --barcodes /plasmidseq/barcodes/v2/ \
        --barcode_kit "MY-CUSTOM-BARCODES" \
        --guppy_model dna_r9.4.1_450bps_sup.cfg \
@@ -63,7 +63,7 @@ NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
            -with-singularity <path to .sif file> \
            --samplesheet <path to sample_sheet.tsv> \
            --use_existing_basecalls true \
-           --fast5 "" \
+           --fast5 "none" \
            --basecalling_dir <path_to_fastq_dir> \
            --base_calling_summary_file <path_to_summary.txt> \
            --barcodes /plasmidseq/barcodes/v2/ \
