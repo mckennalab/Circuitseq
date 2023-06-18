@@ -12,7 +12,7 @@ NXF_VER=21.10.6 ./nextflow run ../../pipelines/CircuitSeq.nf \
            --barcodes /plasmidseq/barcodes/v2/ \
            --barcode_kit "MY-CUSTOM-BARCODES" \
            --guppy_model dna_r9.4.1_450bps_sup.cfg \
-           --medaka_model r941_min_sup_g507 \
+           --medaka_model r1041_e82_400bps_hac_g615 \
            --gpu_slot cuda:0 \
            --barcode_min_score 65 \
            --quality_control_processes true \
