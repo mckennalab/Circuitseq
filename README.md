@@ -72,7 +72,6 @@ git clone https://github.com/mckennalab/Circuitseq/
 #--barcode_kit to the name of the barcode kit you used (this is with guppy v5.0.16 names which can be found in our barcodes/nanopore_official directory on the github. 
 #our --barcode_min_score was set based on our demultiplexing data to achieve best sensititivy/specificity, if you find that using nanopore barcodes you are losing too many reads or getting too much noise you can change this parameter accordingly. 
 
-```
 
 4. Finally, once you have modified the files mentioned above, you can run the pipeline by running:
 ```
