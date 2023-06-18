@@ -57,7 +57,7 @@ git clone https://github.com/mckennalab/Circuitseq/
   	- `sample`: the sampleID, which can be a plasmid name or a alphanumeric code (_no_ special characters or spaces)
   	- `reference`: you can provide the location where the known fasta reference is located. Due to some Nextflow weirdness, this can't be directly in the run directory (but a subdirectory like ./references/ is fine). If you have a reference, this is worth setting up, it will allow the Circuit-seq pipeline to do quality assessment on the assembly and give you aligned BAM files even when the assembly fails. If you don't have a reference simple fill in this column with `NA`.
 
-3. Create a copy of the `run_nf.sh` shell script found in the pipelines directory and modify the following parameters:
+3. Create a copy of the `run_nf.sh` shell script found in either one of the [example data](https://github.com/mckennalab/Circuitseq/tree/main/example_data) directory and modify the following parameters:
     - Path to nextflow if it is not in your path
     - Path to the CircuitSeq.nf pipeline file found in /pipelines 
     - Path to the nextflow.config file found in /pipelines
@@ -66,27 +66,6 @@ git clone https://github.com/mckennalab/Circuitseq/
     - If running from fast5 provide a path to `--fast5` directory and leave `--basecalling_dir` and `--base_calling_summary_file` as `""`
     - If running from fastq leave `--fast5`as `""` and provide fastq directory for`--basecalling_dir` and sequencing_summary.txt file for`--base_calling_summary_file`
 
-
-```
-#It is safest to use absolute paths  
-NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
-           --GPU ON \
-           -c <path to /pipelines/nextflow.config> \
-           -with-singularity <path to .sif file> \
-           --samplesheet <path to sample_sheet.tsv> \
-           --use_existing_basecalls <false if from fast5, true if from fastq> \
-           --fast5 <path to fast5 directory, use "none" if starting from fastq> \
-           --basecalling_dir <path_to_fastq_dir, use "none" if starting from fast5> \
-           --base_calling_summary_file <path_to_summary.txt, use "none" if starting from fast5> \
-           --barcodes /plasmidseq/barcodes/v2/ \
-           --barcode_kit "MY-CUSTOM-BARCODES" \
-           --guppy_model dna_r9.4.1_450bps_sup.cfg \
-           --medaka_model r941_min_sup_g507 \
-           --gpu_slot cuda:0 \
-           --barcode_min_score 65 \
-           --quality_control_processes true \
-           -resume
-	   
 
 #To use nanopore barcoding kits you can change: 
 #--barcodes to /plasmidseq/barcodes/nanopore_official/
@@ -101,7 +80,7 @@ bash <shell_script_you_modified_just_above_here.sh>
 ```
 
 ### Barcodes and custom barcodes
-The nanopore official barcodes are already included in the docker container, if you use the nanopore kits you need to set:
+The nanopore official barcodes are already included in the docker container. If you use the nanopore kits you need to set the following parameters:
 ```
  --barcodes /plasmidseq/barcodes/nanopore_official/ \
  --barcode_kit "kit-name-in-quotes" \
@@ -110,26 +89,18 @@ The kit name is the one you would use for normal guppy demulitplexing, eg: `"SQK
 
 If you would like to use your own barcodes you can by mounting your custom files in the singularity container by adding `--bind /source/directory:/location/in/container` to the run script and then changing `--barcodes` to point to where you mounted them.  e.g.:
 ```
-NXF_VER=21.10.6 nextflow run <path to /pipelines/CircuitSeq.nf> \
-           --bind /my/custom/barcodes:/mnt/barcodes
-	   --GPU ON \
-           -c <path to /pipelines/nextflow.config> \
-           -with-singularity <path to .sif file> \
-           --samplesheet <path to sample_sheet.tsv> \
-           --use_existing_basecalls <false if from fast5, true if from fastq> \
-           --fast5 <path to fast5 directory, use "none" if starting from fastq> \
-           --basecalling_dir <path_to_fastq_dir, use "none" if starting from fast5> \
-           --base_calling_summary_file <path_to_summary.txt, use "none" if starting from fast5> \
            --barcodes /mnt/barcodes/ \
            --barcode_kit "MY-NEW-CUSTOM-BARCODES" \
-           --guppy_model dna_r9.4.1_450bps_sup.cfg \
-           --medaka_model r941_min_sup_g507 \
-           --gpu_slot cuda:0 \
-           --barcode_min_score 65 \
-           --quality_control_processes true \
-           -resume
 ```
 
+### Running 10.4.1 Flongles
+
+Circuitseq was developed with the 9.4 chemistry but supports the current 10.4.1 Flongles. You'll just need to change the base calling models appropriately:
+
+```
+--guppy_model dna_r9.4.1_450bps_sup.cfg \
+--medaka_model r1041_e82_400bps_hac_g615 \
+```
 
 ### Test data
 If you want to test out the pipeline we have added a downsampled fast5 and fastqs in the `example_data` directory. There you will find an explanation of how to run each example. 
