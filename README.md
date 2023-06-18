@@ -88,6 +88,7 @@ The nanopore official barcodes are already included in the docker container. If 
 The kit name is the one you would use for normal guppy demulitplexing, eg: `"SQK-RBK110-96"`
 
 If you would like to use your own barcodes you can by mounting your custom files in the singularity container by adding `--bind /source/directory:/location/in/container` to the run script and then changing `--barcodes` to point to where you mounted them.  e.g.:
+
 ```
            --barcodes /mnt/barcodes/ \
            --barcode_kit "MY-NEW-CUSTOM-BARCODES" \
